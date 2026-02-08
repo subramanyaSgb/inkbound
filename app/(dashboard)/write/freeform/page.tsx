@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useWriteStore } from '@/stores/write-store'
 import { FreeformEditor } from '@/components/write/FreeformEditor'
+import { GeneratingAnimation } from '@/components/write/GeneratingAnimation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -73,6 +74,8 @@ export default function FreeformWritePage() {
           {isGenerating ? 'Generating Chapter...' : 'Generate Chapter'}
         </Button>
       </div>
+
+      {isGenerating && <GeneratingAnimation />}
     </div>
   )
 }
