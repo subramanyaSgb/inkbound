@@ -7,9 +7,9 @@ import type { NovelWithChapterCount } from '@/types'
 export function NovelCard({ novel }: { novel: NovelWithChapterCount }) {
   return (
     <Link href={`/novel/${novel.id}`}>
-      <Card hover className="flex flex-col gap-3">
+      <Card hover className="flex flex-row md:flex-col gap-3">
         {/* Cover placeholder */}
-        <div className="aspect-[3/4] w-full rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center overflow-hidden">
+        <div className="aspect-square w-16 md:aspect-[3/4] md:w-full flex-shrink-0 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center overflow-hidden">
           {novel.cover_image_url ? (
             <img
               src={novel.cover_image_url}
@@ -18,7 +18,7 @@ export function NovelCard({ novel }: { novel: NovelWithChapterCount }) {
             />
           ) : (
             <div className="text-center p-4">
-              <p className="font-display text-lg text-accent-primary">{novel.title}</p>
+              <p className="font-display text-sm md:text-lg text-accent-primary">{novel.title}</p>
               <p className="text-xs text-text-muted mt-1">{novel.genre}</p>
             </div>
           )}
@@ -26,7 +26,7 @@ export function NovelCard({ novel }: { novel: NovelWithChapterCount }) {
 
         {/* Info */}
         <div>
-          <h3 className="font-display text-lg text-text-primary truncate">{novel.title}</h3>
+          <h3 className="font-display text-base md:text-lg text-text-primary truncate">{novel.title}</h3>
           <p className="text-sm text-text-secondary">
             Ch. {novel.chapter_count}
             {novel.volume_count > 0 && ` · Vol ${novel.volume_count}`}

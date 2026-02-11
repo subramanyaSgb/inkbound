@@ -46,8 +46,8 @@ export default async function HomePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-3xl text-text-primary">Your Library</h1>
+      <div className="flex items-center justify-between mb-4 md:mb-8">
+        <h1 className="font-display text-xl md:text-3xl text-text-primary">Your Library</h1>
         <Link href="/novel/new">
           <Button>+ New Novel</Button>
         </Link>
@@ -55,14 +55,14 @@ export default async function HomePage() {
 
       {novelsWithCounts.length === 0 ? (
         <div className="text-center py-20">
-          <p className="font-display text-2xl text-text-secondary mb-2">No novels yet</p>
+          <p className="font-display text-lg md:text-2xl text-text-secondary mb-2">No novels yet</p>
           <p className="text-text-muted mb-6">Start your first novel and turn your life into a story.</p>
           <Link href="/novel/new">
             <Button size="lg">Create Your First Novel</Button>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
           {novelsWithCounts.map((novel) => (
             <NovelCard key={novel.id} novel={novel} />
           ))}

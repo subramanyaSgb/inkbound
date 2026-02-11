@@ -24,11 +24,11 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-4 md:mb-8">
         <Link href="/" className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-block">
           &larr; Library
         </Link>
-        <h1 className="font-display text-3xl text-text-primary">{novel.title}</h1>
+        <h1 className="font-display text-xl md:text-3xl text-text-primary">{novel.title}</h1>
         <p className="text-text-secondary mt-1">
           {novel.genre} &middot; {novel.pov} person &middot; {novel.writing_style} style
         </p>
@@ -37,7 +37,7 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
         )}
       </div>
 
-      <div className="flex gap-3 mb-8">
+      <div className="flex gap-2 md:gap-3 mb-4 md:mb-8">
         <Link href={`/write?novelId=${novelId}`}>
           <Button>Write Today&apos;s Entry</Button>
         </Link>
@@ -46,7 +46,7 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
         </Link>
       </div>
 
-      <h2 className="font-display text-xl text-text-primary mb-4">Chapters</h2>
+      <h2 className="font-display text-lg md:text-xl text-text-primary mb-3 md:mb-4">Chapters</h2>
       <ChapterList chapters={chapters || []} novelId={novelId} />
     </div>
   )

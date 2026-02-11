@@ -30,9 +30,9 @@ export function ChapterList({ chapters, novelId }: { chapters: Chapter[]; novelI
           href={`/novel/${novelId}/chapter/${chapter.id}`}
           className="block"
         >
-          <div className="flex items-start gap-4 p-4 rounded-lg border border-ink-border bg-ink-card hover:border-accent-primary/30 transition-colors">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center">
-              <span className="text-sm font-ui text-text-secondary">{chapter.chapter_number}</span>
+          <div className="flex items-start gap-3 p-3 md:p-4 rounded-lg border border-ink-border bg-ink-card hover:border-accent-primary/30 transition-colors">
+            <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center">
+              <span className="text-xs md:text-sm font-ui text-text-secondary">{chapter.chapter_number}</span>
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-display text-base text-text-primary truncate">

@@ -40,17 +40,17 @@ export default async function ChapterPage({
     .single()
 
   return (
-    <div className="max-w-3xl mx-auto pb-12">
+    <div className="max-w-3xl mx-auto pb-8 md:pb-12">
       <Link
         href={`/novel/${novelId}`}
-        className="text-sm text-text-muted hover:text-text-secondary mb-8 inline-block"
+        className="text-xs md:text-sm text-text-muted hover:text-text-secondary mb-4 md:mb-8 inline-block"
       >
         &larr; All Chapters
       </Link>
 
       <ChapterReader chapter={chapter} />
 
-      <div className="flex justify-between mt-12">
+      <div className="flex justify-between mt-6 md:mt-12">
         {prevChapter ? (
           <Link href={`/novel/${novelId}/chapter/${prevChapter.id}`}>
             <Button variant="ghost">&larr; Previous</Button>
