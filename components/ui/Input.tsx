@@ -17,7 +17,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={`
-            w-full rounded-lg border bg-ink-surface px-4 py-2.5 font-ui text-text-primary
+            w-full rounded-lg border bg-ink-surface px-3 py-2 md:px-4 md:py-2.5 font-ui text-text-primary
             placeholder:text-text-muted
             focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary
             ${error ? 'border-status-error' : 'border-ink-border'}

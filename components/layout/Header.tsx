@@ -15,8 +15,8 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-border bg-ink-bg/80 backdrop-blur-sm px-4 py-3 lg:px-6">
-      <h1 className="font-display text-2xl text-accent-primary">Inkbound</h1>
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-border bg-ink-bg/80 backdrop-blur-sm px-3 py-2 md:px-4 md:py-3 lg:px-6">
+      <h1 className="font-display text-xl md:text-2xl text-accent-primary">Inkbound</h1>
       <Button variant="ghost" size="sm" onClick={handleLogout}>
         Sign Out
       </Button>
