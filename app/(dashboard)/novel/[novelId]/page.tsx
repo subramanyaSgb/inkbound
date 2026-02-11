@@ -51,6 +51,9 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
         <Link href={`/novel/${novelId}/settings`}>
           <Button variant="secondary">Settings</Button>
         </Link>
+        <Link href={`/novel/${novelId}/stats`}>
+          <Button variant="secondary">Stats</Button>
+        </Link>
       </div>
 
       <div className="flex items-center justify-between mb-3 md:mb-4">
