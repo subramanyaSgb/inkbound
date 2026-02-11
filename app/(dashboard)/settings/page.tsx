@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { StoryProfileSection } from '@/components/settings/StoryProfileSection'
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
@@ -68,6 +69,16 @@ export default function SettingsPage() {
         <Card>
           <h2 className="font-display text-lg text-text-primary mb-4">Account</h2>
           <Button variant="secondary" onClick={handleLogout}>Sign Out</Button>
+        </Card>
+
+        <Card>
+          <h2 className="font-display text-base md:text-lg text-text-primary mb-4">Story Profiles</h2>
+          <p className="text-xs text-text-muted mb-6">Add people and places so the AI gets your story right. These are used across all your novels.</p>
+          <div className="space-y-6">
+            <StoryProfileSection type="personal" title="Personal Info" description="Your own details for the protagonist" />
+            <StoryProfileSection type="character" title="Characters" description="People in your life" />
+            <StoryProfileSection type="location" title="Locations" description="Places that appear in your stories" />
+          </div>
         </Card>
       </div>
     </div>
