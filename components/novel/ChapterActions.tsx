@@ -1,0 +1,144 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Modal } from '@/components/ui/Modal'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+
+interface ChapterActionsProps {
+  chapterId: string
+  novelId: string
+  chapterTitle: string
+}
+
+export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActionsProps) {
+  const router = useRouter()
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [quickEditInstruction, setQuickEditInstruction] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isQuickEditing, setIsQuickEditing] = useState(false)
+
+  async function handleQuickEdit() {
+    if (!quickEditInstruction.trim()) return
+    setIsQuickEditing(true)
+
+    try {
+      const response = await fetch('/api/generate-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          novelId,
+          chapterId,
+          editInstruction: quickEditInstruction,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Failed to regenerate')
+      }
+
+      const { chapterId: resultId } = await response.json()
+      setShowEditModal(false)
+      setQuickEditInstruction('')
+      router.push(`/novel/${novelId}/chapter/${resultId}`)
+      router.refresh()
+    } catch {
+      setIsQuickEditing(false)
+    }
+  }
+
+  async function handleDelete() {
+    setIsDeleting(true)
+    const supabase = createClient()
+    await supabase
+      .from('chapters')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', chapterId)
+
+    setShowDeleteModal(false)
+    router.push(`/novel/${novelId}`)
+    router.refresh()
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="text-xs font-ui text-accent-primary hover:text-accent-primary/80 transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="text-xs font-ui text-text-muted hover:text-status-error transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+
+      {/* Edit Options Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Chapter">
+        <div className="space-y-4">
+          {/* Quick Edit */}
+          <div className="p-3 rounded-lg border border-ink-border bg-ink-surface">
+            <p className="text-sm font-ui text-text-primary mb-2">Quick Edit</p>
+            <p className="text-xs text-text-muted mb-3">
+              Tell the AI what to change and it will regenerate the chapter.
+            </p>
+            <Input
+              value={quickEditInstruction}
+              onChange={e => setQuickEditInstruction(e.target.value)}
+              placeholder="e.g. Change my wife's name to Priya, make the ending more hopeful..."
+            />
+            <Button
+              size="sm"
+              className="mt-2"
+              onClick={handleQuickEdit}
+              isLoading={isQuickEditing}
+              disabled={!quickEditInstruction.trim()}
+            >
+              Regenerate with Changes
+            </Button>
+          </div>
+
+          {/* Full Edit */}
+          <div className="p-3 rounded-lg border border-ink-border bg-ink-surface">
+            <p className="text-sm font-ui text-text-primary mb-2">Full Edit</p>
+            <p className="text-xs text-text-muted mb-3">
+              Edit your original entry text and regenerate the entire chapter.
+            </p>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setShowEditModal(false)
+                router.push(`/write/freeform?novelId=${novelId}&chapterId=${chapterId}`)
+              }}
+            >
+              Edit Raw Entry
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Chapter">
+        <p className="text-sm text-text-secondary mb-2">
+          Move &ldquo;{chapterTitle}&rdquo; to the recycle bin?
+        </p>
+        <p className="text-xs text-text-muted mb-6">
+          You can restore it within 30 days. After that, it will be permanently deleted.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary" size="sm" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button variant="danger" size="sm" onClick={handleDelete} isLoading={isDeleting}>Move to Bin</Button>
+        </div>
+      </Modal>
+    </>
+  )
+}

@@ -60,6 +60,7 @@ export interface Chapter {
   summary_type: string | null
   word_count: number
   version: number
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }

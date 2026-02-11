@@ -20,7 +20,14 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
     .from('chapters')
     .select('*')
     .eq('novel_id', novelId)
+    .is('deleted_at', null)
     .order('chapter_number', { ascending: false })
+
+  const { count: deletedCount } = await supabase
+    .from('chapters')
+    .select('*', { count: 'exact', head: true })
+    .eq('novel_id', novelId)
+    .not('deleted_at', 'is', null)
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -46,7 +53,17 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
         </Link>
       </div>
 
-      <h2 className="font-display text-lg md:text-xl text-text-primary mb-3 md:mb-4">Chapters</h2>
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h2 className="font-display text-lg md:text-xl text-text-primary">Chapters</h2>
+        {(deletedCount ?? 0) > 0 && (
+          <Link
+            href={`/novel/${novelId}/bin`}
+            className="text-xs font-ui text-text-muted hover:text-text-secondary transition-colors"
+          >
+            Recycle Bin ({deletedCount})
+          </Link>
+        )}
+      </div>
       <ChapterList chapters={chapters || []} novelId={novelId} />
     </div>
   )

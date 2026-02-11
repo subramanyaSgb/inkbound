@@ -12,9 +12,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { novelId, rawEntry, entryDate, chapterId } = await request.json()
+    const { novelId, rawEntry, entryDate, chapterId, editInstruction } = await request.json()
 
-    if (!novelId || !rawEntry?.trim() || !entryDate) {
+    // Quick edit mode: editInstruction + chapterId, no rawEntry needed
+    const isQuickEdit = !!editInstruction?.trim() && !!chapterId
+
+    if (!novelId || (!isQuickEdit && (!rawEntry?.trim() || !entryDate))) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -29,29 +32,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
     }
 
-    // Get chapter count for chapter number
+    // Get chapter count for chapter number (exclude deleted)
     const { count: chapterCount } = await supabase
       .from('chapters')
       .select('*', { count: 'exact', head: true })
       .eq('novel_id', novelId)
+      .is('deleted_at', null)
 
     const chapterNumber = (chapterCount || 0) + 1
 
-    // If editing existing chapter, use its chapter number
+    // If editing existing chapter, use its chapter number and fetch raw_entry for quick edit
     let finalChapterNumber = chapterNumber
+    let finalRawEntry = rawEntry
+    let finalEntryDate = entryDate
     if (chapterId) {
       const { data: existingChapter } = await supabase
         .from('chapters')
-        .select('chapter_number')
+        .select('chapter_number, raw_entry, entry_date, content')
         .eq('id', chapterId)
         .single()
       if (existingChapter) {
         finalChapterNumber = existingChapter.chapter_number
+        if (isQuickEdit) {
+          finalRawEntry = existingChapter.raw_entry
+          finalEntryDate = existingChapter.entry_date
+        }
       }
     }
 
     // Get or create volume for the entry year
-    const entryYear = new Date(entryDate).getFullYear()
+    const entryYear = new Date(finalEntryDate).getFullYear()
 
     let { data: volume } = await supabase
       .from('volumes')
@@ -80,11 +90,12 @@ export async function POST(request: NextRequest) {
       volume = newVolume
     }
 
-    // Fetch recent chapters for continuity
+    // Fetch recent chapters for continuity (exclude deleted)
     const { data: recentChapters } = await supabase
       .from('chapters')
       .select('title, content, mood, chapter_number')
       .eq('novel_id', novelId)
+      .is('deleted_at', null)
       .order('chapter_number', { ascending: false })
       .limit(3)
 
@@ -97,13 +108,14 @@ export async function POST(request: NextRequest) {
     // Build prompt and generate
     const { system, user: userPrompt } = buildChapterPrompt(
       novel,
-      rawEntry,
-      entryDate,
+      finalRawEntry,
+      finalEntryDate,
       finalChapterNumber,
       volume?.volume_number || 1,
       entryYear,
       recentChapters || [],
-      storyProfiles || []
+      storyProfiles || [],
+      isQuickEdit ? editInstruction : undefined
     )
 
     const result = await generateChapter(system, userPrompt)
@@ -117,8 +129,8 @@ export async function POST(request: NextRequest) {
         .update({
           title: result.title,
           content: result.content,
-          raw_entry: rawEntry,
-          entry_date: entryDate,
+          raw_entry: finalRawEntry,
+          entry_date: finalEntryDate,
           mood: result.mood,
           mood_score: result.mood_score,
           tags: result.tags,

@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import type { Chapter } from '@/types'
+import { ChapterActions } from './ChapterActions'
 
 export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId: string }) {
   const paragraphs = chapter.content.split('\n').filter(p => p.trim())
@@ -12,12 +12,11 @@ export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId:
           <p className="text-xs md:text-sm text-text-muted font-ui">
             Chapter {chapter.chapter_number}
           </p>
-          <Link
-            href={`/write/freeform?novelId=${novelId}&chapterId=${chapter.id}`}
-            className="text-xs font-ui text-accent-primary hover:text-accent-primary/80 transition-colors"
-          >
-            Edit Entry
-          </Link>
+          <ChapterActions
+            chapterId={chapter.id}
+            novelId={novelId}
+            chapterTitle={chapter.title || `Chapter ${chapter.chapter_number}`}
+          />
         </div>
         <h1 className="font-display text-2xl md:text-3xl lg:text-4xl text-text-primary mb-4 md:mb-6">
           {chapter.title || `Chapter ${chapter.chapter_number}`}

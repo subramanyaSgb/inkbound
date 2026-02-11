@@ -8,7 +8,8 @@ export function buildChapterPrompt(
   volumeNumber: number,
   year: number,
   recentChapters: Pick<Chapter, 'title' | 'content' | 'mood' | 'chapter_number'>[],
-  storyProfiles: StoryProfile[] = []
+  storyProfiles: StoryProfile[] = [],
+  editInstruction?: string
 ): { system: string; user: string } {
   const recentContext = recentChapters.length > 0
     ? recentChapters.map(ch =>
@@ -99,7 +100,11 @@ RESPOND IN JSON ONLY (no markdown code fences):
   "best_quote": "The single best line from this chapter"
 }`
 
-  const user = `Here is what happened on ${entryDate}:\n\n${rawEntry}`
+  let user = `Here is what happened on ${entryDate}:\n\n${rawEntry}`
+
+  if (editInstruction) {
+    user += `\n\nEDIT INSTRUCTION: The user wants you to regenerate this chapter with the following changes: ${editInstruction}\nKeep the same raw entry content but apply these specific modifications to the generated chapter.`
+  }
 
   return { system, user }
 }
