@@ -48,7 +48,7 @@ export default async function ChapterPage({
         &larr; All Chapters
       </Link>
 
-      <ChapterReader chapter={chapter} />
+      <ChapterReader chapter={chapter} novelId={novelId} />
 
       <div className="flex justify-between mt-6 md:mt-12">
         {prevChapter ? (

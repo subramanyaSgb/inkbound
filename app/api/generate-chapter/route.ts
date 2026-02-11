@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { novelId, rawEntry, entryDate } = await request.json()
+    const { novelId, rawEntry, entryDate, chapterId } = await request.json()
 
     if (!novelId || !rawEntry?.trim() || !entryDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -36,6 +36,19 @@ export async function POST(request: NextRequest) {
       .eq('novel_id', novelId)
 
     const chapterNumber = (chapterCount || 0) + 1
+
+    // If editing existing chapter, use its chapter number
+    let finalChapterNumber = chapterNumber
+    if (chapterId) {
+      const { data: existingChapter } = await supabase
+        .from('chapters')
+        .select('chapter_number')
+        .eq('id', chapterId)
+        .single()
+      if (existingChapter) {
+        finalChapterNumber = existingChapter.chapter_number
+      }
+    }
 
     // Get or create volume for the entry year
     const entryYear = new Date(entryDate).getFullYear()
@@ -80,7 +93,7 @@ export async function POST(request: NextRequest) {
       novel,
       rawEntry,
       entryDate,
-      chapterNumber,
+      finalChapterNumber,
       volume?.volume_number || 1,
       entryYear,
       recentChapters || []
@@ -89,31 +102,63 @@ export async function POST(request: NextRequest) {
     const result = await generateChapter(system, userPrompt)
 
     // Save chapter
-    const { data: chapter, error: chapterError } = await supabase
-      .from('chapters')
-      .insert({
-        novel_id: novelId,
-        volume_id: volume?.id || null,
-        chapter_number: chapterNumber,
-        title: result.title,
-        content: result.content,
-        raw_entry: rawEntry,
-        entry_mode: 'freeform',
-        entry_date: entryDate,
-        mood: result.mood,
-        mood_score: result.mood_score,
-        tags: result.tags,
-        opening_quote: result.opening_quote,
-        soundtrack_suggestion: result.soundtrack
-          ? `${result.soundtrack.song} by ${result.soundtrack.artist}`
-          : null,
-        word_count: result.content.split(/\s+/).length,
-      })
-      .select()
-      .single()
+    let savedChapter
 
-    if (chapterError) {
-      return NextResponse.json({ error: chapterError.message }, { status: 500 })
+    if (chapterId) {
+      const { data: chapter, error: chapterError } = await supabase
+        .from('chapters')
+        .update({
+          title: result.title,
+          content: result.content,
+          raw_entry: rawEntry,
+          entry_date: entryDate,
+          mood: result.mood,
+          mood_score: result.mood_score,
+          tags: result.tags,
+          opening_quote: result.opening_quote,
+          soundtrack_suggestion: result.soundtrack
+            ? `${result.soundtrack.song} by ${result.soundtrack.artist}`
+            : null,
+          word_count: result.content.split(/\s+/).length,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', chapterId)
+        .eq('novel_id', novelId)
+        .select()
+        .single()
+
+      if (chapterError) {
+        return NextResponse.json({ error: chapterError.message }, { status: 500 })
+      }
+      savedChapter = chapter
+    } else {
+      const { data: chapter, error: chapterError } = await supabase
+        .from('chapters')
+        .insert({
+          novel_id: novelId,
+          volume_id: volume?.id || null,
+          chapter_number: finalChapterNumber,
+          title: result.title,
+          content: result.content,
+          raw_entry: rawEntry,
+          entry_mode: 'freeform',
+          entry_date: entryDate,
+          mood: result.mood,
+          mood_score: result.mood_score,
+          tags: result.tags,
+          opening_quote: result.opening_quote,
+          soundtrack_suggestion: result.soundtrack
+            ? `${result.soundtrack.song} by ${result.soundtrack.artist}`
+            : null,
+          word_count: result.content.split(/\s+/).length,
+        })
+        .select()
+        .single()
+
+      if (chapterError) {
+        return NextResponse.json({ error: chapterError.message }, { status: 500 })
+      }
+      savedChapter = chapter
     }
 
     // Update novel's updated_at
@@ -122,7 +167,7 @@ export async function POST(request: NextRequest) {
       .update({ updated_at: new Date().toISOString() })
       .eq('id', novelId)
 
-    return NextResponse.json({ chapterId: chapter.id })
+    return NextResponse.json({ chapterId: savedChapter.id })
   } catch (error: unknown) {
     console.error('Chapter generation error:', error)
     return NextResponse.json({ error: 'Failed to generate chapter' }, { status: 500 })

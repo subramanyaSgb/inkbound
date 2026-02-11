@@ -1,14 +1,24 @@
+import Link from 'next/link'
 import type { Chapter } from '@/types'
 
-export function ChapterReader({ chapter }: { chapter: Chapter }) {
+export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId: string }) {
   const paragraphs = chapter.content.split('\n').filter(p => p.trim())
 
   return (
     <article className="max-w-2xl mx-auto">
       <header className="text-center mb-6 md:mb-10">
-        <p className="text-xs md:text-sm text-text-muted font-ui mb-1 md:mb-2">
-          Chapter {chapter.chapter_number}
-        </p>
+        <div className="flex items-center justify-between mb-1 md:mb-2">
+          <div />
+          <p className="text-xs md:text-sm text-text-muted font-ui">
+            Chapter {chapter.chapter_number}
+          </p>
+          <Link
+            href={`/write/freeform?novelId=${novelId}&chapterId=${chapter.id}`}
+            className="text-xs font-ui text-accent-primary hover:text-accent-primary/80 transition-colors"
+          >
+            Edit Entry
+          </Link>
+        </div>
         <h1 className="font-display text-2xl md:text-3xl lg:text-4xl text-text-primary mb-4 md:mb-6">
           {chapter.title || `Chapter ${chapter.chapter_number}`}
         </h1>
