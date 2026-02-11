@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const moods = chapters.map(c => c.mood).filter(Boolean).join(', ')
-    const tags = [...new Set(chapters.flatMap(c => c.tags))].join(', ')
+    const tags = Array.from(new Set(chapters.flatMap(c => c.tags))).join(', ')
     const avgScore = chapters.reduce((s, c) => s + (c.mood_score || 0.5), 0) / chapters.length
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {

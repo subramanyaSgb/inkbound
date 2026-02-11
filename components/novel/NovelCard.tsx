@@ -4,7 +4,12 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import type { NovelWithChapterCount } from '@/types'
 
-export function NovelCard({ novel }: { novel: NovelWithChapterCount }) {
+interface NovelCardProps {
+  novel: NovelWithChapterCount
+  progress?: { lastChapterId: string; chaptersRead: number; totalChapters: number }
+}
+
+export function NovelCard({ novel, progress }: NovelCardProps) {
   return (
     <Link href={`/novel/${novel.id}`}>
       <Card hover className="flex flex-row md:flex-col gap-3">
@@ -37,6 +42,24 @@ export function NovelCard({ novel }: { novel: NovelWithChapterCount }) {
             </p>
           )}
         </div>
+
+        {progress && (
+          <div className="mt-2 pt-2 border-t border-ink-border">
+            <div className="w-full h-1 bg-ink-surface rounded-full overflow-hidden mb-1">
+              <div
+                className="h-full bg-accent-primary rounded-full transition-all"
+                style={{ width: `${Math.min(100, (progress.chaptersRead / Math.max(1, progress.totalChapters)) * 100)}%` }}
+              />
+            </div>
+            <a
+              href={`/novel/${novel.id}/chapter/${progress.lastChapterId}`}
+              className="text-xs font-ui text-accent-primary hover:text-accent-primary/80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Continue reading
+            </a>
+          </div>
+        )}
       </Card>
     </Link>
   )

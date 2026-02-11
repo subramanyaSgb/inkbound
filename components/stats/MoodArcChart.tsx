@@ -71,7 +71,7 @@ export function MoodArcChart({ data }: MoodArcChartProps) {
             <Tooltip
               contentStyle={{ backgroundColor: '#1A1620', border: '1px solid #2E2836', borderRadius: 8, fontSize: 12 }}
               labelFormatter={(d) => new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              formatter={(value: number) => [`${(value * 100).toFixed(0)}%`, 'Mood']}
+              formatter={(value: number | undefined) => [`${((value ?? 0) * 100).toFixed(0)}%`, 'Mood']}
             />
             <Area
               type="monotone"

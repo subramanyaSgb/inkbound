@@ -97,6 +97,15 @@ export interface StoryProfile {
   updated_at: string
 }
 
+export interface ReadingProgress {
+  id: string
+  user_id: string
+  novel_id: string
+  last_chapter_id: string | null
+  chapters_read: number
+  updated_at: string
+}
+
 export interface NovelWithChapterCount extends Novel {
   chapter_count: number
   latest_chapter_date: string | null

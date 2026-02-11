@@ -21,6 +21,19 @@ export default async function ChapterPage({
 
   if (!chapter) notFound()
 
+  // Auto-track reading progress
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    await supabase
+      .from('reading_progress')
+      .upsert({
+        user_id: user.id,
+        novel_id: novelId,
+        last_chapter_id: chapterId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,novel_id' })
+  }
+
   const { data: prevChapter } = await supabase
     .from('chapters')
     .select('id')

@@ -83,9 +83,9 @@ export function computeWordStats(chapters: Chapter[]) {
 }
 
 export function computeStreak(chapters: Chapter[]): { current: number; longest: number; total: number } {
-  const dates = [...new Set(
+  const dates = Array.from(new Set(
     chapters.filter(c => !c.deleted_at).map(c => c.entry_date)
-  )].sort()
+  )).sort()
 
   if (dates.length === 0) return { current: 0, longest: 0, total: 0 }
 

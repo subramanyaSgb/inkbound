@@ -58,14 +58,22 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
 
       <div className="flex items-center justify-between mb-3 md:mb-4">
         <h2 className="font-display text-lg md:text-xl text-text-primary">Chapters</h2>
-        {(deletedCount ?? 0) > 0 && (
+        <div className="flex items-center gap-3">
           <Link
-            href={`/novel/${novelId}/bin`}
+            href={`/novel/${novelId}/search`}
             className="text-xs font-ui text-text-muted hover:text-text-secondary transition-colors"
           >
-            Recycle Bin ({deletedCount})
+            Search
           </Link>
-        )}
+          {(deletedCount ?? 0) > 0 && (
+            <Link
+              href={`/novel/${novelId}/bin`}
+              className="text-xs font-ui text-text-muted hover:text-text-secondary transition-colors"
+            >
+              Recycle Bin ({deletedCount})
+            </Link>
+          )}
+        </div>
       </div>
       <ChapterList chapters={chapters || []} novelId={novelId} />
     </div>

@@ -53,6 +53,18 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
           </div>
         </Card>
       </Link>
+
+      <Link href={`/write/guided?novelId=${novelId}`} className="block mt-3">
+        <Card hover className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center text-xl">
+            ?
+          </div>
+          <div>
+            <h3 className="font-ui font-medium text-text-primary">Guided Chat</h3>
+            <p className="text-sm text-text-secondary">AI interviews you about your day</p>
+          </div>
+        </Card>
+      </Link>
     </div>
   )
 }

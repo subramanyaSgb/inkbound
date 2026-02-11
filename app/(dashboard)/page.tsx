@@ -44,6 +44,25 @@ export default async function HomePage() {
     })
   )
 
+  // Fetch reading progress for all novels
+  const { data: progress } = await supabase
+    .from('reading_progress')
+    .select('novel_id, last_chapter_id, chapters_read')
+
+  const progressMap: Record<string, { lastChapterId: string; chaptersRead: number; totalChapters: number }> = {}
+  if (progress && novels) {
+    for (const p of progress) {
+      if (p.last_chapter_id) {
+        const matchingNovel = novelsWithCounts.find(n => n.id === p.novel_id)
+        progressMap[p.novel_id] = {
+          lastChapterId: p.last_chapter_id,
+          chaptersRead: p.chapters_read ?? 0,
+          totalChapters: matchingNovel?.chapter_count ?? 0,
+        }
+      }
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 md:mb-8">
@@ -64,7 +83,7 @@ export default async function HomePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
           {novelsWithCounts.map((novel) => (
-            <NovelCard key={novel.id} novel={novel} />
+            <NovelCard key={novel.id} novel={novel} progress={progressMap[novel.id]} />
           ))}
         </div>
       )}
