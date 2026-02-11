@@ -40,8 +40,8 @@ export default function FreeformWritePage() {
       const { chapterId } = await response.json()
       reset()
       router.push(`/novel/${novelId}/chapter/${chapterId}`)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsGenerating(false)
     }
   }

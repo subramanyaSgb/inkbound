@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       .eq('id', novelId)
 
     return NextResponse.json({ chapterId: chapter.id })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Chapter generation error:', error)
     return NextResponse.json({ error: 'Failed to generate chapter' }, { status: 500 })
   }
