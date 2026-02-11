@@ -8,17 +8,42 @@ import { GeneratingAnimation } from '@/components/write/GeneratingAnimation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { createClient } from '@/lib/supabase/client'
 
 export default function FreeformWritePage() {
   const searchParams = useSearchParams()
   const novelId = searchParams.get('novelId')
+  const chapterId = searchParams.get('chapterId')
   const router = useRouter()
-  const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, isGenerating, setIsGenerating, reset } = useWriteStore()
+  const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, setEditingChapterId, reset } = useWriteStore()
   const [error, setError] = useState('')
+  const [isLoadingEntry, setIsLoadingEntry] = useState(false)
+  const isEditing = !!chapterId
 
   useEffect(() => {
     if (novelId) setSelectedNovelId(novelId)
   }, [novelId, setSelectedNovelId])
+
+  // Load existing entry when editing
+  useEffect(() => {
+    if (!chapterId) return
+    setIsLoadingEntry(true)
+    setEditingChapterId(chapterId)
+
+    const supabase = createClient()
+    supabase
+      .from('chapters')
+      .select('raw_entry, entry_date')
+      .eq('id', chapterId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setRawEntry(data.raw_entry)
+          setEntryDate(data.entry_date)
+        }
+        setIsLoadingEntry(false)
+      })
+  }, [chapterId, setEditingChapterId, setRawEntry, setEntryDate])
 
   async function handleGenerate() {
     if (!rawEntry.trim() || !novelId) return
@@ -29,7 +54,12 @@ export default function FreeformWritePage() {
       const response = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ novelId, rawEntry, entryDate }),
+        body: JSON.stringify({
+          novelId,
+          rawEntry,
+          entryDate,
+          ...(isEditing && { chapterId }),
+        }),
       })
 
       if (!response.ok) {
@@ -37,19 +67,27 @@ export default function FreeformWritePage() {
         throw new Error(err.error || 'Failed to generate chapter')
       }
 
-      const { chapterId } = await response.json()
+      const { chapterId: resultChapterId } = await response.json()
       reset()
-      router.push(`/novel/${novelId}/chapter/${chapterId}`)
+      router.push(`/novel/${novelId}/chapter/${resultChapterId}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsGenerating(false)
     }
   }
 
+  if (isLoadingEntry) {
+    return (
+      <div className="max-w-3xl mx-auto flex items-center justify-center min-h-[200px]">
+        <p className="text-text-muted font-ui text-sm">Loading entry...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <button onClick={() => router.back()} className="text-sm text-text-muted hover:text-text-secondary">
+        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-text-secondary">
           &larr; Back
         </button>
         <Input
@@ -60,7 +98,11 @@ export default function FreeformWritePage() {
         />
       </div>
 
-      <Card className="min-h-[400px]">
+      {isEditing && (
+        <p className="text-xs text-accent-primary font-ui mb-3">Editing entry — changes will regenerate this chapter</p>
+      )}
+
+      <Card className="min-h-[250px] md:min-h-[400px]">
         <FreeformEditor />
       </Card>
 
@@ -71,7 +113,10 @@ export default function FreeformWritePage() {
           Discard
         </Button>
         <Button onClick={handleGenerate} isLoading={isGenerating} disabled={!rawEntry.trim()}>
-          {isGenerating ? 'Generating Chapter...' : 'Generate Chapter'}
+          {isGenerating
+            ? (isEditing ? 'Regenerating...' : 'Generating Chapter...')
+            : (isEditing ? 'Regenerate Chapter' : 'Generate Chapter')
+          }
         </Button>
       </div>
 

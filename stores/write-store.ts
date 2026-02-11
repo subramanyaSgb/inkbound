@@ -5,10 +5,12 @@ interface WriteStore {
   rawEntry: string
   entryDate: string
   isGenerating: boolean
+  editingChapterId: string | null
   setSelectedNovelId: (id: string | null) => void
   setRawEntry: (text: string) => void
   setEntryDate: (date: string) => void
   setIsGenerating: (val: boolean) => void
+  setEditingChapterId: (id: string | null) => void
   reset: () => void
 }
 
@@ -17,9 +19,11 @@ export const useWriteStore = create<WriteStore>((set) => ({
   rawEntry: '',
   entryDate: new Date().toISOString().split('T')[0],
   isGenerating: false,
+  editingChapterId: null,
   setSelectedNovelId: (id) => set({ selectedNovelId: id }),
   setRawEntry: (text) => set({ rawEntry: text }),
   setEntryDate: (date) => set({ entryDate: date }),
   setIsGenerating: (val) => set({ isGenerating: val }),
-  reset: () => set({ rawEntry: '', entryDate: new Date().toISOString().split('T')[0], isGenerating: false }),
+  setEditingChapterId: (id) => set({ editingChapterId: id }),
+  reset: () => set({ rawEntry: '', entryDate: new Date().toISOString().split('T')[0], isGenerating: false, editingChapterId: null }),
 }))
