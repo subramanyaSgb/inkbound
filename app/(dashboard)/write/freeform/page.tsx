@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { createClient } from '@/lib/supabase/client'
+import { scanForUnknownReferences, type UnknownReference } from '@/lib/profile-scanner'
+import { ProfileQuestionModal, type ProfileAnswer } from '@/components/write/ProfileQuestionModal'
+import type { StoryProfile } from '@/types'
 
 export default function FreeformWritePage() {
   const searchParams = useSearchParams()
@@ -18,6 +21,8 @@ export default function FreeformWritePage() {
   const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, setEditingChapterId, reset } = useWriteStore()
   const [error, setError] = useState('')
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
+  const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const isEditing = !!chapterId
 
   useEffect(() => {
@@ -45,7 +50,7 @@ export default function FreeformWritePage() {
       })
   }, [chapterId, setEditingChapterId, setRawEntry, setEntryDate])
 
-  async function handleGenerate() {
+  async function doGenerate() {
     if (!rawEntry.trim() || !novelId) return
     setIsGenerating(true)
     setError('')
@@ -74,6 +79,53 @@ export default function FreeformWritePage() {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsGenerating(false)
     }
+  }
+
+  async function handleGenerate() {
+    if (!rawEntry.trim() || !novelId) return
+    setError('')
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profiles } = await supabase
+      .from('story_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+
+    const found = scanForUnknownReferences(rawEntry, (profiles as StoryProfile[]) || [])
+
+    if (found.length > 0) {
+      setUnknowns(found)
+      setShowProfileModal(true)
+    } else {
+      await doGenerate()
+    }
+  }
+
+  async function handleProfileAnswers(answers: ProfileAnswer[]) {
+    setShowProfileModal(false)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const toSave = answers.filter(a => !a.skipped && a.name.trim())
+    if (toSave.length > 0) {
+      await supabase.from('story_profiles').insert(
+        toSave.map(a => ({
+          user_id: user.id,
+          type: a.type,
+          name: a.name,
+          relationship: a.relationship !== 'unknown' ? a.relationship : null,
+          nickname: a.nickname || null,
+          details: a.details,
+        }))
+      )
+    }
+
+    await doGenerate()
   }
 
   if (isLoadingEntry) {
@@ -121,6 +173,14 @@ export default function FreeformWritePage() {
       </div>
 
       {isGenerating && <GeneratingAnimation />}
+
+      {showProfileModal && (
+        <ProfileQuestionModal
+          unknowns={unknowns}
+          onComplete={handleProfileAnswers}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   )
 }
