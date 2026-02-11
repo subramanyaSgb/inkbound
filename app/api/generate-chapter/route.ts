@@ -88,6 +88,12 @@ export async function POST(request: NextRequest) {
       .order('chapter_number', { ascending: false })
       .limit(3)
 
+    // Fetch user's story profiles
+    const { data: storyProfiles } = await supabase
+      .from('story_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+
     // Build prompt and generate
     const { system, user: userPrompt } = buildChapterPrompt(
       novel,
@@ -96,7 +102,8 @@ export async function POST(request: NextRequest) {
       finalChapterNumber,
       volume?.volume_number || 1,
       entryYear,
-      recentChapters || []
+      recentChapters || [],
+      storyProfiles || []
     )
 
     const result = await generateChapter(system, userPrompt)

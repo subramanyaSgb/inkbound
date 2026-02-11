@@ -1,4 +1,4 @@
-import type { Novel, Chapter } from '@/types'
+import type { Novel, Chapter, StoryProfile } from '@/types'
 
 export function buildChapterPrompt(
   novel: Novel,
@@ -7,13 +7,57 @@ export function buildChapterPrompt(
   chapterNumber: number,
   volumeNumber: number,
   year: number,
-  recentChapters: Pick<Chapter, 'title' | 'content' | 'mood' | 'chapter_number'>[]
+  recentChapters: Pick<Chapter, 'title' | 'content' | 'mood' | 'chapter_number'>[],
+  storyProfiles: StoryProfile[] = []
 ): { system: string; user: string } {
   const recentContext = recentChapters.length > 0
     ? recentChapters.map(ch =>
         `Chapter ${ch.chapter_number} "${ch.title}": mood=${ch.mood}, summary: ${ch.content.slice(0, 200)}...`
       ).join('\n')
     : 'No previous chapters yet. This is the beginning of the story.'
+
+  // Build profile context
+  let profileContext = ''
+  const personal = storyProfiles.filter(p => p.type === 'personal')
+  const characters = storyProfiles.filter(p => p.type === 'character')
+  const locations = storyProfiles.filter(p => p.type === 'location')
+
+  if (storyProfiles.length > 0) {
+    profileContext = '\nCHARACTER & LOCATION REFERENCE:\n'
+
+    if (personal.length > 0) {
+      profileContext += 'Protagonist details:\n'
+      personal.forEach(p => {
+        const dets = Object.entries(p.details || {}).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')
+        profileContext += `- ${p.name}${dets ? ` (${dets})` : ''}\n`
+      })
+    }
+
+    if (characters.length > 0) {
+      profileContext += 'People:\n'
+      characters.forEach(p => {
+        const dets = Object.entries(p.details || {}).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')
+        const rel = p.relationship ? ` (${p.relationship})` : ''
+        const nick = p.nickname ? ` aka "${p.nickname}"` : ''
+        profileContext += `- ${p.name}${rel}${nick}${dets ? `: ${dets}` : ''}\n`
+      })
+    }
+
+    if (locations.length > 0) {
+      profileContext += 'Locations:\n'
+      locations.forEach(p => {
+        const dets = Object.entries(p.details || {}).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(', ')
+        profileContext += `- ${p.name}${dets ? `: ${dets}` : ''}\n`
+      })
+    }
+
+    profileContext += `
+STRICT RULES ABOUT CHARACTERS AND PLACES:
+- Use ONLY the names and details listed in the CHARACTER & LOCATION REFERENCE above
+- NEVER invent names, ages, appearances, or personal details for anyone
+- If a person is NOT in the reference, refer to them ONLY by their relationship ("his wife", "her friend")
+- If a place is NOT in the reference, use generic descriptions only`
+  }
 
   const system = `You are a masterful novelist transforming real daily experiences into an evolving novel. You write with the skill of a published author.
 
@@ -29,7 +73,7 @@ NOVEL CONTEXT:
 
 RECENT CHAPTERS (for continuity):
 ${recentContext}
-
+${profileContext}
 INSTRUCTIONS:
 1. Transform the raw entry into a beautifully written novel chapter
 2. Maintain the ${novel.genre} tone throughout
