@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
@@ -6,13 +6,13 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { novelId, messages } = await request.json()
 
-  if (!novelId || !messages) {
-    return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 })
+  if (!novelId || !Array.isArray(messages)) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
   // Fetch novel for context
@@ -45,32 +45,53 @@ RULES:
     ...messages,
   ]
 
-  const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'moonshotai/kimi-k2.5',
-      messages: apiMessages,
-      max_tokens: 256,
-      temperature: 0.9,
-      stream: true,
-    }),
-  })
+  try {
+    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'moonshotai/kimi-k2.5',
+        messages: apiMessages,
+        max_tokens: 256,
+        temperature: 0.9,
+        stream: false,
+      }),
+    })
 
-  if (!response.ok) {
-    const err = await response.text()
-    return new Response(JSON.stringify({ error: `AI error: ${err}` }), { status: 500 })
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('NVIDIA API error:', err)
+      return NextResponse.json({ error: 'AI service error' }, { status: 500 })
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content || ''
+
+    // Return as SSE so the client streaming parser still works
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      start(controller) {
+        const chunk = JSON.stringify({
+          choices: [{ delta: { content } }],
+        })
+        controller.enqueue(encoder.encode(`data: ${chunk}\n\n`))
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
+  } catch (err) {
+    console.error('Guided chat error:', err)
+    return NextResponse.json({ error: 'Failed to get AI response' }, { status: 500 })
   }
-
-  // Forward the SSE stream to the client
-  return new Response(response.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
 }

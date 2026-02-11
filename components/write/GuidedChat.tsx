@@ -32,7 +32,8 @@ export function GuidedChat() {
   useEffect(() => {
     if (novelId && messages.length === 0) {
       setSelectedNovelId(novelId)
-      sendToAI([])
+      // Send a hidden kickstart message so the API has a user message to respond to
+      sendToAI([{ role: 'user', content: 'Hi, I want to write about my day.' }])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [novelId])
@@ -131,12 +132,28 @@ export function GuidedChat() {
     }
   }
 
+  function handleBack() {
+    resetChat()
+    router.push(`/write?novelId=${novelId}`)
+  }
+
   const userMessageCount = messages.filter(m => m.role === 'user').length
 
   if (isGenerating) return <GeneratingAnimation />
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-160px)]">
+      {/* Header with back button */}
+      <div className="flex items-center gap-3 pb-3 mb-2 border-b border-ink-border">
+        <button
+          onClick={handleBack}
+          className="text-sm text-text-muted hover:text-text-secondary transition-colors"
+        >
+          &larr; Back
+        </button>
+        <h2 className="font-display text-base text-text-primary">Guided Chat</h2>
+      </div>
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-4">
         {messages.map((msg, i) => (

@@ -18,28 +18,51 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
     redirect('/novel/new')
   }
 
-  const novelId = searchParams.novelId || novels[0].id
+  // If only 1 novel, auto-select it. Otherwise require explicit selection.
+  const novelId = searchParams.novelId || (novels.length === 1 ? novels[0].id : null)
+
+  // Step 1: Novel selection (shown when multiple novels and none chosen yet)
+  if (!novelId) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <h1 className="font-display text-xl md:text-3xl text-text-primary mb-1 md:mb-2">Which novel are you writing for?</h1>
+        <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-6">Pick a novel to continue.</p>
+
+        <div className="space-y-2">
+          {novels.map((novel) => (
+            <Link key={novel.id} href={`/write?novelId=${novel.id}`}>
+              <Card hover className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center">
+                  <span className="font-display text-sm text-accent-primary">{novel.title.charAt(0)}</span>
+                </div>
+                <h3 className="font-ui font-medium text-text-primary">{novel.title}</h3>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Step 2: Write mode selection (shown after novel is chosen)
+  const selectedNovel = novels.find(n => n.id === novelId)
 
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="font-display text-xl md:text-3xl text-text-primary mb-1 md:mb-2">What happened today?</h1>
-      <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-8">Select your novel and start writing.</p>
 
       {novels.length > 1 && (
-        <div className="mb-4 md:mb-6">
-          <label className="block text-sm font-ui text-text-secondary mb-2">Writing for:</label>
-          <div className="flex flex-wrap gap-2">
-            {novels.map((novel) => (
-              <Link
-                key={novel.id}
-                href={`/write?novelId=${novel.id}`}
-                className={`px-4 py-2 rounded-lg border text-sm font-ui transition-all ${novel.id === novelId ? 'border-accent-primary bg-ink-highlight text-accent-primary' : 'border-ink-border text-text-secondary hover:border-text-muted'}`}
-              >
-                {novel.title}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <p className="text-sm text-text-secondary mb-4 md:mb-6">
+          Writing for <span className="text-accent-primary font-ui">{selectedNovel?.title}</span>
+          {' '}&middot;{' '}
+          <Link href="/write" className="text-text-muted hover:text-text-secondary underline underline-offset-2">
+            change
+          </Link>
+        </p>
+      )}
+
+      {novels.length === 1 && (
+        <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-6">Choose how you want to write.</p>
       )}
 
       <Link href={`/write/freeform?novelId=${novelId}`}>
