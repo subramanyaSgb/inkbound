@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Crimson_Pro, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import "./globals.css";
 
@@ -29,6 +29,19 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Inkbound',
   description: 'Your life, bound in ink.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Inkbound',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#0D0B0E',
 }
 
 export default function RootLayout({
