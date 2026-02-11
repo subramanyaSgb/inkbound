@@ -53,9 +53,9 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-3xl text-text-primary mb-8">Settings</h1>
+      <h1 className="font-display text-xl md:text-3xl text-text-primary mb-4 md:mb-8">Settings</h1>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <Card>
           <h2 className="font-display text-lg text-text-primary mb-4">Profile</h2>
           <div className="space-y-4">

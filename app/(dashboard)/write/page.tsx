@@ -22,11 +22,11 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-3xl text-text-primary mb-2">What happened today?</h1>
-      <p className="text-text-secondary mb-8">Select your novel and start writing.</p>
+      <h1 className="font-display text-xl md:text-3xl text-text-primary mb-1 md:mb-2">What happened today?</h1>
+      <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-8">Select your novel and start writing.</p>
 
       {novels.length > 1 && (
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6">
           <label className="block text-sm font-ui text-text-secondary mb-2">Writing for:</label>
           <div className="flex flex-wrap gap-2">
             {novels.map((novel) => (

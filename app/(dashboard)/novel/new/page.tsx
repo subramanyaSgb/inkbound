@@ -55,9 +55,9 @@ export default function NewNovelPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-3xl text-text-primary mb-8">Create a New Novel</h1>
+      <h1 className="font-display text-xl md:text-3xl text-text-primary mb-4 md:mb-8">Create a New Novel</h1>
 
-      <form onSubmit={handleCreate} className="space-y-6">
+      <form onSubmit={handleCreate} className="space-y-4 md:space-y-6">
         <Card>
           <div className="space-y-4">
             <Input

@@ -72,9 +72,9 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
       <button onClick={() => router.back()} className="text-sm text-text-muted hover:text-text-secondary mb-6 inline-block">
         &larr; Back
       </button>
-      <h1 className="font-display text-3xl text-text-primary mb-8">Novel Settings</h1>
+      <h1 className="font-display text-xl md:text-3xl text-text-primary mb-4 md:mb-8">Novel Settings</h1>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <Card>
           <div className="space-y-4">
             <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />

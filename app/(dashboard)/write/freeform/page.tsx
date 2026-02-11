@@ -48,7 +48,7 @@ export default function FreeformWritePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <button onClick={() => router.back()} className="text-sm text-text-muted hover:text-text-secondary">
           &larr; Back
         </button>
@@ -66,7 +66,7 @@ export default function FreeformWritePage() {
 
       {error && <p className="text-sm text-status-error mt-4">{error}</p>}
 
-      <div className="flex justify-end mt-6 gap-3">
+      <div className="flex flex-col-reverse sm:flex-row justify-end mt-4 md:mt-6 gap-2 md:gap-3">
         <Button variant="secondary" onClick={() => { reset(); router.back() }}>
           Discard
         </Button>
