@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const contentPool = [
@@ -60,33 +60,43 @@ export function GeneratingAnimation() {
   const [items] = useState(() => shuffleArray(contentPool))
   const [currentIndex, setCurrentIndex] = useState(0)
   const [displayedText, setDisplayedText] = useState('')
-  const [phase, setPhase] = useState<'typing' | 'pausing' | 'fading'>('typing')
+  const [visible, setVisible] = useState(true)
+  const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentItem = items[currentIndex % items.length]
 
-  const advanceToNext = useCallback(() => {
-    setPhase('fading')
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1)
-      setDisplayedText('')
-      setPhase('typing')
-    }, 800)
-  }, [])
-
+  // Typewriter effect: type out the current item character by character
   useEffect(() => {
-    if (phase !== 'typing') return
+    setDisplayedText('')
+    setVisible(true)
+    let charIndex = 0
 
-    if (displayedText.length < currentItem.length) {
-      const timer = setTimeout(() => {
-        setDisplayedText(currentItem.slice(0, displayedText.length + 1))
-      }, 35)
-      return () => clearTimeout(timer)
-    } else {
-      setPhase('pausing')
-      const timer = setTimeout(advanceToNext, 2000)
-      return () => clearTimeout(timer)
+    function typeNext() {
+      if (charIndex < currentItem.length) {
+        charIndex++
+        setDisplayedText(currentItem.slice(0, charIndex))
+        typingRef.current = setTimeout(typeNext, 35)
+      }
     }
-  }, [displayedText, currentItem, phase, advanceToNext])
+
+    typingRef.current = setTimeout(typeNext, 300)
+
+    return () => {
+      if (typingRef.current) clearTimeout(typingRef.current)
+    }
+  }, [currentItem])
+
+  // Cycle to next item every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setCurrentIndex(prev => prev + 1)
+      }, 600)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <motion.div
@@ -114,9 +124,9 @@ export function GeneratingAnimation() {
           <motion.p
             key={currentIndex}
             initial={{ opacity: 0 }}
-            animate={{ opacity: phase === 'fading' ? 0 : 1 }}
+            animate={{ opacity: visible ? 1 : 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5 }}
             className="font-body text-base md:text-lg text-text-primary text-center leading-relaxed"
           >
             {displayedText}
