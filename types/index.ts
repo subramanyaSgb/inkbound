@@ -82,6 +82,20 @@ export interface ChapterGenerationResponse {
   best_quote: string
 }
 
+export type StoryProfileType = 'personal' | 'character' | 'location'
+
+export interface StoryProfile {
+  id: string
+  user_id: string
+  type: StoryProfileType
+  name: string
+  relationship: string | null
+  nickname: string | null
+  details: Record<string, string>
+  created_at: string
+  updated_at: string
+}
+
 export interface NovelWithChapterCount extends Novel {
   chapter_count: number
   latest_chapter_date: string | null
