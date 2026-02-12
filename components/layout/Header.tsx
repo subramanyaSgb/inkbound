@@ -51,7 +51,7 @@ export function Header() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -5 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 mt-2 w-44 glass-card rounded-xl shadow-glass overflow-hidden"
+              className="absolute right-0 mt-2 w-44 bg-ink-card border border-ink-border/70 rounded-xl shadow-glass overflow-hidden backdrop-blur-xl"
             >
               <Link
                 href="/settings"
