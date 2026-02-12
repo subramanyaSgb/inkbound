@@ -8,7 +8,6 @@ interface WriteStore {
   editingChapterId: string | null
   setSelectedNovelId: (id: string | null) => void
   setRawEntry: (text: string) => void
-  appendRawEntry: (text: string) => void
   setEntryDate: (date: string) => void
   setIsGenerating: (val: boolean) => void
   setEditingChapterId: (id: string | null) => void
@@ -24,10 +23,6 @@ export const useWriteStore = create<WriteStore>((set) => ({
   editingChapterId: null,
   setSelectedNovelId: (id) => set({ selectedNovelId: id }),
   setRawEntry: (text) => set({ rawEntry: text }),
-  appendRawEntry: (text) => set((state) => {
-    const sep = state.rawEntry && !state.rawEntry.endsWith(' ') && !state.rawEntry.endsWith('\n') ? ' ' : ''
-    return { rawEntry: state.rawEntry + sep + text }
-  }),
   setEntryDate: (date) => set({ entryDate: date }),
   setIsGenerating: (val) => set({ isGenerating: val }),
   setEditingChapterId: (id) => set({ editingChapterId: id }),

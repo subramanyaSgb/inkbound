@@ -1,14 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Mic, MicOff } from 'lucide-react'
 import { useWriteStore } from '@/stores/write-store'
-import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import { createClient } from '@/lib/supabase/client'
 import type { StoryProfile } from '@/types'
 
 export function FreeformEditor() {
-  const { rawEntry, setRawEntry, appendRawEntry } = useWriteStore()
+  const { rawEntry, setRawEntry } = useWriteStore()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [profiles, setProfiles] = useState<StoryProfile[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
@@ -16,12 +14,6 @@ export function FreeformEditor() {
   const [mentionStart, setMentionStart] = useState<number>(-1)
 
   const wordCount = rawEntry.trim() ? rawEntry.trim().split(/\s+/).length : 0
-
-  const { isListening, isSupported, interim, toggle } = useSpeechRecognition({
-    onResult: (transcript) => {
-      appendRawEntry(transcript)
-    },
-  })
 
   // Load profiles once
   useEffect(() => {
@@ -111,44 +103,10 @@ export function FreeformEditor() {
         className="w-full min-h-[250px] md:min-h-[300px] bg-transparent font-body text-base md:text-lg text-text-primary leading-relaxed placeholder:text-text-muted/40 resize-none focus:outline-none"
       />
 
-      {/* Interim speech text preview */}
-      {interim && (
-        <p className="text-sm text-text-muted/60 font-body italic mt-1">{interim}...</p>
-      )}
-
-      {/* Bottom bar: word count + mic button */}
-      <div className="flex items-center justify-between mt-1">
+      <div className="mt-1">
         <div className="text-xs text-text-muted/50 font-ui">
           {wordCount} words
         </div>
-
-        {isSupported && (
-          <button
-            type="button"
-            onClick={toggle}
-            className={`
-              relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-ui transition-all
-              ${isListening
-                ? 'text-status-error bg-status-error/10 border border-status-error/20'
-                : 'text-text-muted hover:text-text-secondary hover:bg-ink-surface/50 border border-transparent'
-              }
-            `}
-            title={isListening ? 'Stop dictation' : 'Start dictation'}
-          >
-            {isListening ? (
-              <>
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-error animate-pulse" />
-                <MicOff className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Stop</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Dictate</span>
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       {showDropdown && filteredProfiles.length > 0 && (
