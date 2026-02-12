@@ -12,12 +12,13 @@ interface WriteStore {
   setIsGenerating: (val: boolean) => void
   setEditingChapterId: (id: string | null) => void
   reset: () => void
+  initDate: () => void
 }
 
 export const useWriteStore = create<WriteStore>((set) => ({
   selectedNovelId: null,
   rawEntry: '',
-  entryDate: new Date().toISOString().split('T')[0],
+  entryDate: '',
   isGenerating: false,
   editingChapterId: null,
   setSelectedNovelId: (id) => set({ selectedNovelId: id }),
@@ -26,4 +27,5 @@ export const useWriteStore = create<WriteStore>((set) => ({
   setIsGenerating: (val) => set({ isGenerating: val }),
   setEditingChapterId: (id) => set({ editingChapterId: id }),
   reset: () => set({ rawEntry: '', entryDate: new Date().toISOString().split('T')[0], isGenerating: false, editingChapterId: null }),
+  initDate: () => set((state) => ({ entryDate: state.entryDate || new Date().toISOString().split('T')[0] })),
 }))

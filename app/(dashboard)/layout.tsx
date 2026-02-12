@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { Header } from '@/components/layout/Header'
+import { SidebarHydration } from '@/components/layout/SidebarHydration'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -14,6 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen">
+      <SidebarHydration />
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <div className="lg:hidden">

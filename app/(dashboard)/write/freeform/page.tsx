@@ -21,7 +21,7 @@ export default function FreeformWritePage() {
   const novelId = searchParams.get('novelId')
   const chapterId = searchParams.get('chapterId')
   const router = useRouter()
-  const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, setEditingChapterId, reset } = useWriteStore()
+  const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, setEditingChapterId, reset, initDate } = useWriteStore()
   const [error, setError] = useState('')
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
@@ -32,6 +32,11 @@ export default function FreeformWritePage() {
   useEffect(() => {
     if (novelId) setSelectedNovelId(novelId)
   }, [novelId, setSelectedNovelId])
+
+  // Initialize date on the client to avoid hydration mismatch
+  useEffect(() => {
+    if (!chapterId) initDate()
+  }, [chapterId, initDate])
 
   // Load existing entry when editing
   useEffect(() => {

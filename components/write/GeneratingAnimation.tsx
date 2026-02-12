@@ -57,11 +57,16 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export function GeneratingAnimation() {
-  const [items] = useState(() => shuffleArray(contentPool))
+  const [items, setItems] = useState(contentPool)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [displayedText, setDisplayedText] = useState('')
   const [visible, setVisible] = useState(true)
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Shuffle on client only to avoid hydration mismatch from Math.random()
+  useEffect(() => {
+    setItems(shuffleArray(contentPool))
+  }, [])
 
   const currentItem = items[currentIndex % items.length]
 

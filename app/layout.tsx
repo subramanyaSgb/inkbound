@@ -50,9 +50,11 @@ export const metadata: Metadata = {
     follow: true,
   },
   appleWebApp: {
-    capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Inkbound',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
   },
 }
 
