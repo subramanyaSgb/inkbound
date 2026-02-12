@@ -2,18 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-interface SpeechRecognitionEvent {
-  results: SpeechRecognitionResultList
-  resultIndex: number
-}
-
-interface SpeechRecognitionErrorEvent {
-  error: string
-}
-
 interface UseSpeechRecognitionOptions {
   onResult?: (transcript: string) => void
-  onInterim?: (transcript: string) => void
   lang?: string
 }
 
@@ -26,23 +16,25 @@ interface UseSpeechRecognitionReturn {
   toggle: () => void
 }
 
+/**
+ * Speech-to-text hook using Web Speech API.
+ *
+ * Uses single-utterance mode (continuous=false) with auto-restart.
+ * Each pause in speech produces one clean final result — no duplication.
+ * Auto-restarts after each utterance so the mic stays active until the user stops it.
+ */
 export function useSpeechRecognition({
   onResult,
-  onInterim,
   lang = 'en-US',
 }: UseSpeechRecognitionOptions = {}): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [interim, setInterim] = useState('')
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null)
   const onResultRef = useRef(onResult)
-  const onInterimRef = useRef(onInterim)
   const wantListeningRef = useRef(false)
-  const lastProcessedRef = useRef(-1)
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   onResultRef.current = onResult
-  onInterimRef.current = onInterim
 
   useEffect(() => {
     const supported = typeof window !== 'undefined' &&
@@ -50,76 +42,68 @@ export function useSpeechRecognition({
     setIsSupported(supported)
   }, [])
 
-  const createAndStart = useCallback(() => {
+  const startSession = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return
 
-    const recognition = new SpeechRecognition()
+    const recognition = new SR()
     recognition.lang = lang
-    recognition.continuous = true
+    recognition.continuous = false      // Single utterance per session — prevents duplication
     recognition.interimResults = true
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interimTranscript = ''
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      let finalText = ''
+      let interimText = ''
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i]
-        if (result.isFinal) {
-          // Only process each final result once (by index)
-          if (i > lastProcessedRef.current) {
-            lastProcessedRef.current = i
-            const text = result[0].transcript.trim()
-            if (text) {
-              setInterim('')
-              onResultRef.current?.(text)
-            }
-          }
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript
         } else {
-          interimTranscript += result[0].transcript
+          interimText += event.results[i][0].transcript
         }
       }
 
-      if (interimTranscript) {
-        setInterim(interimTranscript)
-        onInterimRef.current?.(interimTranscript)
+      if (finalText) {
+        const trimmed = finalText.trim()
+        if (trimmed) {
+          setInterim('')
+          onResultRef.current?.(trimmed)
+        }
+      } else if (interimText) {
+        setInterim(interimText)
       }
     }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // 'no-speech' and 'aborted' are expected when restarting or during silence
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
+      // 'no-speech' happens during silence — just let it restart
+      // 'aborted' happens when we call stop() — expected
       if (event.error === 'no-speech' || event.error === 'aborted') return
+
+      // Real error — stop everything
       wantListeningRef.current = false
       setIsListening(false)
       setInterim('')
     }
 
     recognition.onend = () => {
-      // Auto-restart if user hasn't explicitly stopped
+      setInterim('')
+      // Auto-restart with a fresh instance if user hasn't clicked stop
       if (wantListeningRef.current) {
-        try {
-          // Reset the processed index for the new session
-          lastProcessedRef.current = -1
-          recognition.start()
-        } catch {
-          // If restart fails, stop gracefully
-          wantListeningRef.current = false
-          setIsListening(false)
-          setInterim('')
-        }
+        restartTimerRef.current = setTimeout(() => {
+          if (wantListeningRef.current) {
+            startSession()
+          }
+        }, 100)
       } else {
         setIsListening(false)
-        setInterim('')
       }
     }
 
-    recognitionRef.current = recognition
-    lastProcessedRef.current = -1
-
     try {
       recognition.start()
-      wantListeningRef.current = true
-      setIsListening(true)
     } catch {
       wantListeningRef.current = false
       setIsListening(false)
@@ -128,17 +112,17 @@ export function useSpeechRecognition({
 
   const start = useCallback(() => {
     if (!isSupported || wantListeningRef.current) return
-    createAndStart()
-  }, [isSupported, createAndStart])
+    wantListeningRef.current = true
+    setIsListening(true)
+    startSession()
+  }, [isSupported, startSession])
 
   const stop = useCallback(() => {
     wantListeningRef.current = false
-    try {
-      recognitionRef.current?.stop()
-    } catch {
-      // Already stopped
+    if (restartTimerRef.current) {
+      clearTimeout(restartTimerRef.current)
+      restartTimerRef.current = null
     }
-    recognitionRef.current = null
     setIsListening(false)
     setInterim('')
   }, [])
@@ -155,10 +139,8 @@ export function useSpeechRecognition({
   useEffect(() => {
     return () => {
       wantListeningRef.current = false
-      try {
-        recognitionRef.current?.stop()
-      } catch {
-        // Already stopped
+      if (restartTimerRef.current) {
+        clearTimeout(restartTimerRef.current)
       }
     }
   }, [])
