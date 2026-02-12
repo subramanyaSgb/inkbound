@@ -15,7 +15,6 @@ interface UseSpeechRecognitionOptions {
   onResult?: (transcript: string) => void
   onInterim?: (transcript: string) => void
   lang?: string
-  continuous?: boolean
 }
 
 interface UseSpeechRecognitionReturn {
@@ -31,14 +30,16 @@ export function useSpeechRecognition({
   onResult,
   onInterim,
   lang = 'en-US',
-  continuous = true,
 }: UseSpeechRecognitionOptions = {}): UseSpeechRecognitionReturn {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [interim, setInterim] = useState('')
-  const recognitionRef = useRef<ReturnType<typeof createRecognition> | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
   const onResultRef = useRef(onResult)
   const onInterimRef = useRef(onInterim)
+  const wantListeningRef = useRef(false)
+  const lastProcessedRef = useRef(-1)
 
   onResultRef.current = onResult
   onInterimRef.current = onInterim
@@ -49,85 +50,118 @@ export function useSpeechRecognition({
     setIsSupported(supported)
   }, [])
 
-  const start = useCallback(() => {
-    if (!isSupported || isListening) return
-
-    const SpeechRecognition = (window as /* eslint-disable-line @typescript-eslint/no-explicit-any */ any).SpeechRecognition ||
-      (window as /* eslint-disable-line @typescript-eslint/no-explicit-any */ any).webkitSpeechRecognition
-
+  const createAndStart = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) return
 
     const recognition = new SpeechRecognition()
     recognition.lang = lang
-    recognition.continuous = continuous
+    recognition.continuous = true
     recognition.interimResults = true
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = ''
       let interimTranscript = ''
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          finalTranscript += result[0].transcript
+          // Only process each final result once (by index)
+          if (i > lastProcessedRef.current) {
+            lastProcessedRef.current = i
+            const text = result[0].transcript.trim()
+            if (text) {
+              setInterim('')
+              onResultRef.current?.(text)
+            }
+          }
         } else {
           interimTranscript += result[0].transcript
         }
       }
 
-      if (finalTranscript) {
-        setInterim('')
-        onResultRef.current?.(finalTranscript)
-      } else if (interimTranscript) {
+      if (interimTranscript) {
         setInterim(interimTranscript)
         onInterimRef.current?.(interimTranscript)
       }
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error !== 'aborted') {
+      // 'no-speech' and 'aborted' are expected when restarting or during silence
+      if (event.error === 'no-speech' || event.error === 'aborted') return
+      wantListeningRef.current = false
+      setIsListening(false)
+      setInterim('')
+    }
+
+    recognition.onend = () => {
+      // Auto-restart if user hasn't explicitly stopped
+      if (wantListeningRef.current) {
+        try {
+          // Reset the processed index for the new session
+          lastProcessedRef.current = -1
+          recognition.start()
+        } catch {
+          // If restart fails, stop gracefully
+          wantListeningRef.current = false
+          setIsListening(false)
+          setInterim('')
+        }
+      } else {
         setIsListening(false)
         setInterim('')
       }
     }
 
-    recognition.onend = () => {
-      setIsListening(false)
-      setInterim('')
-    }
-
     recognitionRef.current = recognition
-    recognition.start()
-    setIsListening(true)
-  }, [isSupported, isListening, lang, continuous])
+    lastProcessedRef.current = -1
+
+    try {
+      recognition.start()
+      wantListeningRef.current = true
+      setIsListening(true)
+    } catch {
+      wantListeningRef.current = false
+      setIsListening(false)
+    }
+  }, [lang])
+
+  const start = useCallback(() => {
+    if (!isSupported || wantListeningRef.current) return
+    createAndStart()
+  }, [isSupported, createAndStart])
 
   const stop = useCallback(() => {
-    recognitionRef.current?.stop()
+    wantListeningRef.current = false
+    try {
+      recognitionRef.current?.stop()
+    } catch {
+      // Already stopped
+    }
     recognitionRef.current = null
     setIsListening(false)
     setInterim('')
   }, [])
 
   const toggle = useCallback(() => {
-    if (isListening) {
+    if (wantListeningRef.current) {
       stop()
     } else {
       start()
     }
-  }, [isListening, start, stop])
+  }, [start, stop])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      recognitionRef.current?.stop()
+      wantListeningRef.current = false
+      try {
+        recognitionRef.current?.stop()
+      } catch {
+        // Already stopped
+      }
     }
   }, [])
 
   return { isListening, isSupported, interim, start, stop, toggle }
-}
-
-function createRecognition() {
-  const SpeechRecognition = (window as /* eslint-disable-line @typescript-eslint/no-explicit-any */ any).SpeechRecognition ||
-    (window as /* eslint-disable-line @typescript-eslint/no-explicit-any */ any).webkitSpeechRecognition
-  return new SpeechRecognition()
 }

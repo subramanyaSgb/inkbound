@@ -43,9 +43,20 @@
     background: rgba(212, 175, 55, 0.35);
   }
 
-  /* Focus-visible ring */
-  *:focus-visible {
+  /* Focus-visible ring — buttons and interactive controls only, not textareas */
+  button:focus-visible,
+  a:focus-visible,
+  input:not([type="text"]):not([type="date"]):not([type="email"]):not([type="password"]):focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible {
     @apply outline-none ring-2 ring-accent-primary/40 ring-offset-2 ring-offset-ink-bg;
+  }
+
+  textarea:focus-visible,
+  input[type="text"]:focus-visible,
+  input[type="email"]:focus-visible,
+  input[type="password"]:focus-visible {
+    @apply outline-none;
   }
 }
 
