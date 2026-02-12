@@ -8,26 +8,18 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
   const supabase = await createClient()
   const { novelId } = params
 
-  const { data: novel } = await supabase
-    .from('novels')
-    .select('*')
-    .eq('id', novelId)
-    .single()
+  // Run all 3 queries in parallel instead of sequentially
+  const [novelResult, chaptersResult, deletedResult] = await Promise.all([
+    supabase.from('novels').select('*').eq('id', novelId).single(),
+    supabase.from('chapters').select('*').eq('novel_id', novelId).is('deleted_at', null).order('chapter_number', { ascending: false }),
+    supabase.from('chapters').select('*', { count: 'exact', head: true }).eq('novel_id', novelId).not('deleted_at', 'is', null),
+  ])
 
+  const novel = novelResult.data
   if (!novel) notFound()
 
-  const { data: chapters } = await supabase
-    .from('chapters')
-    .select('*')
-    .eq('novel_id', novelId)
-    .is('deleted_at', null)
-    .order('chapter_number', { ascending: false })
-
-  const { count: deletedCount } = await supabase
-    .from('chapters')
-    .select('*', { count: 'exact', head: true })
-    .eq('novel_id', novelId)
-    .not('deleted_at', 'is', null)
+  const chapters = chaptersResult.data
+  const deletedCount = deletedResult.count
 
   return (
     <div className="max-w-3xl mx-auto">

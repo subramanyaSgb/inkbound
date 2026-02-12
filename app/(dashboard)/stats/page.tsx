@@ -25,11 +25,11 @@ export default async function GlobalStatsPage() {
   if (novelIds.length > 0) {
     const { data: chapters } = await supabase
       .from('chapters')
-      .select('*')
+      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, soundtrack_suggestion, word_count, deleted_at')
       .in('novel_id', novelIds)
       .is('deleted_at', null)
       .order('entry_date', { ascending: true })
-    allChapters = chapters || []
+    allChapters = (chapters || []) as Chapter[]
   }
 
   const moodData = computeMoodArc(allChapters)

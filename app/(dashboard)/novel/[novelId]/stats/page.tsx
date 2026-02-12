@@ -15,20 +15,20 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
   const supabase = await createClient()
   const { novelId } = params
 
-  const { data: novel } = await supabase
-    .from('novels')
-    .select('title')
-    .eq('id', novelId)
-    .single()
+  // Run novel and chapters queries in parallel; select only needed columns
+  const [novelResult, chaptersResult] = await Promise.all([
+    supabase.from('novels').select('title').eq('id', novelId).single(),
+    supabase.from('chapters')
+      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, soundtrack_suggestion, word_count, deleted_at')
+      .eq('novel_id', novelId)
+      .is('deleted_at', null)
+      .order('entry_date', { ascending: true }),
+  ])
 
+  const novel = novelResult.data
   if (!novel) notFound()
 
-  const { data: chapters } = await supabase
-    .from('chapters')
-    .select('*')
-    .eq('novel_id', novelId)
-    .is('deleted_at', null)
-    .order('entry_date', { ascending: true })
+  const chapters = chaptersResult.data as import('@/types').Chapter[] | null
 
   const allChapters = chapters || []
   const moodData = computeMoodArc(allChapters)
