@@ -135,9 +135,6 @@ export async function POST(request: NextRequest) {
           mood_score: result.mood_score,
           tags: result.tags,
           opening_quote: result.opening_quote,
-          soundtrack_suggestion: result.soundtrack
-            ? `${result.soundtrack.song} by ${result.soundtrack.artist}`
-            : null,
           word_count: result.content.split(/\s+/).length,
           updated_at: new Date().toISOString(),
         })
@@ -166,9 +163,6 @@ export async function POST(request: NextRequest) {
           mood_score: result.mood_score,
           tags: result.tags,
           opening_quote: result.opening_quote,
-          soundtrack_suggestion: result.soundtrack
-            ? `${result.soundtrack.song} by ${result.soundtrack.artist}`
-            : null,
           word_count: result.content.split(/\s+/).length,
         })
         .select()

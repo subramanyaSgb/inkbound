@@ -96,7 +96,6 @@ RESPOND IN JSON ONLY (no markdown code fences):
   "mood": "reflective|joyful|anxious|melancholic|excited|angry|peaceful|confused",
   "mood_score": 0.0,
   "tags": ["tag1", "tag2"],
-  "soundtrack": {"song": "...", "artist": "...", "why": "..."},
   "best_quote": "The single best line from this chapter"
 }`
 

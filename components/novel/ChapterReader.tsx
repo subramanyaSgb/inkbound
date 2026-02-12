@@ -1,4 +1,4 @@
-import { Music, Hash, Calendar, BookOpen } from 'lucide-react'
+import { Hash, Calendar, BookOpen } from 'lucide-react'
 import type { Chapter } from '@/types'
 import { ChapterActions } from './ChapterActions'
 
@@ -47,18 +47,6 @@ export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId:
       </div>
 
       <footer className="mt-10 md:mt-16 pt-6 md:pt-8 border-t border-ink-border/50">
-        {chapter.soundtrack_suggestion && (
-          <div className="glass-card flex items-center gap-3 p-4 rounded-xl mb-4 md:mb-6">
-            <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center flex-shrink-0">
-              <Music className="w-5 h-5 text-accent-primary" />
-            </div>
-            <div>
-              <p className="text-xs font-ui text-text-muted">Soundtrack</p>
-              <p className="text-sm text-text-primary">{chapter.soundtrack_suggestion}</p>
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-wrap items-center gap-2">
           {chapter.mood && (
             <span className="px-3 py-1 rounded-full glass-card text-xs text-text-secondary border-0 flex items-center gap-1.5">

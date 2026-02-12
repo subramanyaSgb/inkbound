@@ -1,13 +1,12 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { computeMoodArc, computeTagCounts, computeSoundtrackCounts, computeWordStats, computeStreak } from '@/lib/stats'
+import { computeMoodArc, computeTagCounts, computeWordStats, computeStreak } from '@/lib/stats'
 import { StreakBanner } from '@/components/stats/StreakBanner'
 import { MoodArcChart } from '@/components/stats/MoodArcChart'
 import { MoodCalendar } from '@/components/stats/MoodCalendar'
 import { WordStats } from '@/components/stats/WordStats'
 import { TagCloud } from '@/components/stats/TagCloud'
-import { TopSoundtracks } from '@/components/stats/TopSoundtracks'
 import { BestQuotes } from '@/components/stats/BestQuotes'
 import { GenreOfYourLife } from '@/components/stats/GenreOfYourLife'
 
@@ -19,7 +18,7 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
   const [novelResult, chaptersResult] = await Promise.all([
     supabase.from('novels').select('title').eq('id', novelId).single(),
     supabase.from('chapters')
-      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, soundtrack_suggestion, word_count, deleted_at')
+      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, word_count, deleted_at')
       .eq('novel_id', novelId)
       .is('deleted_at', null)
       .order('entry_date', { ascending: true }),
@@ -33,7 +32,6 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
   const allChapters = chapters || []
   const moodData = computeMoodArc(allChapters)
   const tags = computeTagCounts(allChapters)
-  const soundtracks = computeSoundtrackCounts(allChapters)
   const wordStats = computeWordStats(allChapters)
   const streak = computeStreak(allChapters)
 
@@ -57,10 +55,7 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
         <WordStats {...wordStats} />
         <GenreOfYourLife novelId={novelId} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <TagCloud tags={tags} />
-          <TopSoundtracks soundtracks={soundtracks} />
-        </div>
+        <TagCloud tags={tags} />
 
         <BestQuotes chapters={allChapters} />
       </div>
