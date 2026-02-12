@@ -62,7 +62,7 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
       )}
 
       {novels.length === 1 && (
-        <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-6">Choose how you want to write.</p>
+        <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-6">Start writing your entry.</p>
       )}
 
       <div className="space-y-3">
@@ -78,17 +78,6 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
           </Card>
         </Link>
 
-        <Link href={`/write/guided?novelId=${novelId}`}>
-          <Card hover variant="glass" className="flex items-center gap-4 group mt-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10 border border-accent-primary/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            </div>
-            <div>
-              <h3 className="font-ui font-medium text-text-primary group-hover:text-accent-primary transition-colors">Guided Chat</h3>
-              <p className="text-sm text-text-secondary">AI interviews you about your day</p>
-            </div>
-          </Card>
-        </Link>
       </div>
     </div>
   )
