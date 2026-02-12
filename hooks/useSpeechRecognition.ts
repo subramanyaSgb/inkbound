@@ -19,9 +19,8 @@ interface UseSpeechRecognitionReturn {
 /**
  * Speech-to-text hook using Web Speech API.
  *
- * Uses single-utterance mode (continuous=false) with auto-restart.
- * Each pause in speech produces one clean final result — no duplication.
- * Auto-restarts after each utterance so the mic stays active until the user stops it.
+ * Uses continuous mode — mic stays open until user explicitly stops.
+ * Tracks processed result indices to prevent word duplication.
  */
 export function useSpeechRecognition({
   onResult,
@@ -32,7 +31,9 @@ export function useSpeechRecognition({
   const [interim, setInterim] = useState('')
   const onResultRef = useRef(onResult)
   const wantListeningRef = useRef(false)
-  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
+  const processedUpToRef = useRef(-1)
 
   onResultRef.current = onResult
 
@@ -42,86 +43,92 @@ export function useSpeechRecognition({
     setIsSupported(supported)
   }, [])
 
-  const startSession = useCallback(() => {
+  const start = useCallback(() => {
+    if (!isSupported || wantListeningRef.current) return
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
 
     const recognition = new SR()
     recognition.lang = lang
-    recognition.continuous = false      // Single utterance per session — prevents duplication
+    recognition.continuous = true
     recognition.interimResults = true
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      let finalText = ''
       let interimText = ''
 
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalText += event.results[i][0].transcript
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i]
+        if (result.isFinal) {
+          // Only process each result index once
+          if (i > processedUpToRef.current) {
+            processedUpToRef.current = i
+            const text = result[0].transcript.trim()
+            if (text) {
+              setInterim('')
+              onResultRef.current?.(text)
+            }
+          }
         } else {
-          interimText += event.results[i][0].transcript
+          interimText += result[0].transcript
         }
       }
 
-      if (finalText) {
-        const trimmed = finalText.trim()
-        if (trimmed) {
-          setInterim('')
-          onResultRef.current?.(trimmed)
-        }
-      } else if (interimText) {
+      if (interimText) {
         setInterim(interimText)
       }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
-      // 'no-speech' happens during silence — just let it restart
-      // 'aborted' happens when we call stop() — expected
       if (event.error === 'no-speech' || event.error === 'aborted') return
-
-      // Real error — stop everything
       wantListeningRef.current = false
+      recognitionRef.current = null
       setIsListening(false)
       setInterim('')
     }
 
     recognition.onend = () => {
-      setInterim('')
-      // Auto-restart with a fresh instance if user hasn't clicked stop
+      // Browser may end the session despite continuous mode (e.g. prolonged silence).
+      // Silently restart with a fresh instance if user hasn't clicked stop.
       if (wantListeningRef.current) {
-        restartTimerRef.current = setTimeout(() => {
-          if (wantListeningRef.current) {
-            startSession()
-          }
-        }, 100)
+        processedUpToRef.current = -1
+        try {
+          recognition.start()
+        } catch {
+          wantListeningRef.current = false
+          recognitionRef.current = null
+          setIsListening(false)
+          setInterim('')
+        }
       } else {
+        recognitionRef.current = null
         setIsListening(false)
+        setInterim('')
       }
     }
+
+    recognitionRef.current = recognition
+    processedUpToRef.current = -1
+    wantListeningRef.current = true
+    setIsListening(true)
 
     try {
       recognition.start()
     } catch {
       wantListeningRef.current = false
+      recognitionRef.current = null
       setIsListening(false)
     }
-  }, [lang])
-
-  const start = useCallback(() => {
-    if (!isSupported || wantListeningRef.current) return
-    wantListeningRef.current = true
-    setIsListening(true)
-    startSession()
-  }, [isSupported, startSession])
+  }, [isSupported, lang])
 
   const stop = useCallback(() => {
     wantListeningRef.current = false
-    if (restartTimerRef.current) {
-      clearTimeout(restartTimerRef.current)
-      restartTimerRef.current = null
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort() } catch { /* already stopped */ }
+      recognitionRef.current = null
     }
     setIsListening(false)
     setInterim('')
@@ -135,12 +142,11 @@ export function useSpeechRecognition({
     }
   }, [start, stop])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       wantListeningRef.current = false
-      if (restartTimerRef.current) {
-        clearTimeout(restartTimerRef.current)
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort() } catch { /* already stopped */ }
       }
     }
   }, [])
