@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 import { useWriteStore } from '@/stores/write-store'
 import { FreeformEditor } from '@/components/write/FreeformEditor'
 import { GeneratingAnimation } from '@/components/write/GeneratingAnimation'
@@ -139,8 +141,9 @@ export default function FreeformWritePage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-text-secondary">
-          &larr; Back
+        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-text-secondary flex items-center gap-1.5 transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </button>
         <Input
           type="date"
@@ -154,9 +157,11 @@ export default function FreeformWritePage() {
         <p className="text-xs text-accent-primary font-ui mb-3">Editing entry — changes will regenerate this chapter</p>
       )}
 
-      <Card className="min-h-[250px] md:min-h-[400px]">
-        <FreeformEditor />
-      </Card>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <Card variant="glass" className="min-h-[250px] md:min-h-[400px]">
+          <FreeformEditor />
+        </Card>
+      </motion.div>
 
       {error && <p className="text-sm text-status-error mt-4">{error}</p>}
 
@@ -164,7 +169,7 @@ export default function FreeformWritePage() {
         <Button variant="secondary" onClick={() => { reset(); router.back() }}>
           Discard
         </Button>
-        <Button onClick={handleGenerate} isLoading={isGenerating} disabled={!rawEntry.trim()}>
+        <Button onClick={handleGenerate} isLoading={isGenerating} disabled={!rawEntry.trim()} variant="glow">
           {isGenerating
             ? (isEditing ? 'Regenerating...' : 'Generating Chapter...')
             : (isEditing ? 'Regenerate Chapter' : 'Generate Chapter')

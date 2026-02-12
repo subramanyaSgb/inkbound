@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -70,7 +71,27 @@ export function ProfileQuestionModal({ unknowns, onComplete, onClose }: ProfileQ
         Help us get the details right. Fill in what you want — the AI will only use what you provide.
       </p>
 
-      <div className="space-y-3">
+      {/* Step indicator dots */}
+      {unknowns.length > 1 && (
+        <div className="flex items-center gap-1.5 mb-5">
+          {unknowns.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === currentIndex ? 'w-6 bg-accent-primary' : i < currentIndex ? 'w-1.5 bg-accent-primary/50' : 'w-1.5 bg-ink-border'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      <motion.div
+        key={currentIndex}
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.2 }}
+        className="space-y-3"
+      >
         <Input
           label="Name"
           value={name}
@@ -98,14 +119,18 @@ export function ProfileQuestionModal({ unknowns, onComplete, onClose }: ProfileQ
           <button
             type="button"
             onClick={() => setShowMore(true)}
-            className="text-xs text-accent-primary hover:text-accent-primary/80 font-ui"
+            className="text-xs text-accent-primary hover:text-accent-primary/80 font-ui transition-colors"
           >
             + Add more details
           </button>
         )}
 
         {showMore && (
-          <div className="space-y-2 pt-1">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="space-y-2 pt-1"
+          >
             {isCharacter ? (
               <>
                 <Input label="Age" value={details.age || ''} onChange={e => setDetails(d => ({ ...d, age: e.target.value }))} placeholder="e.g. 28" />
@@ -119,12 +144,12 @@ export function ProfileQuestionModal({ unknowns, onComplete, onClose }: ProfileQ
                 <Input label="Description" value={details.description || ''} onChange={e => setDetails(d => ({ ...d, description: e.target.value }))} placeholder="What's it like?" />
               </>
             )}
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       <div className="flex items-center justify-between mt-6">
-        <span className="text-xs text-text-muted">{currentIndex + 1} of {unknowns.length}</span>
+        <span className="text-xs text-text-muted font-ui">{currentIndex + 1} of {unknowns.length}</span>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={() => handleNext(true)}>
             Skip

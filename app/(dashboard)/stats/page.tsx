@@ -39,18 +39,26 @@ export default async function GlobalStatsPage() {
   const streak = computeStreak(allChapters)
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <h1 className="font-display text-xl md:text-2xl text-text-primary mb-1">Life Stats</h1>
       <p className="text-xs text-text-muted mb-4 md:mb-6">Across all your novels</p>
 
       <div className="space-y-3 md:space-y-4">
         <StreakBanner current={streak.current} longest={streak.longest} total={streak.total} />
-        <MoodArcChart data={moodData} />
-        <MoodCalendar chapters={allChapters} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <MoodArcChart data={moodData} />
+          <MoodCalendar chapters={allChapters} />
+        </div>
+
         <WordStats {...wordStats} />
         <GenreOfYourLife />
-        <TagCloud tags={tags} />
-        <TopSoundtracks soundtracks={soundtracks} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <TagCloud tags={tags} />
+          <TopSoundtracks soundtracks={soundtracks} />
+        </div>
+
         <BestQuotes chapters={allChapters} />
       </div>
     </div>

@@ -38,7 +38,7 @@ export function StoryProfileForm({ type, profile, onSave, onCancel }: StoryProfi
   }
 
   return (
-    <Card>
+    <Card variant="glass" compact>
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input label="Name" value={name} onChange={e => setName(e.target.value)} required />
         {type === 'character' && (

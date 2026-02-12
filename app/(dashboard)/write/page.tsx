@@ -31,8 +31,8 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
         <div className="space-y-2">
           {novels.map((novel) => (
             <Link key={novel.id} href={`/write?novelId=${novel.id}`}>
-              <Card hover className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center">
+              <Card hover variant="glass" className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10 border border-accent-primary/20 flex items-center justify-center">
                   <span className="font-display text-sm text-accent-primary">{novel.title.charAt(0)}</span>
                 </div>
                 <h3 className="font-ui font-medium text-text-primary">{novel.title}</h3>
@@ -65,29 +65,31 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
         <p className="text-sm md:text-base text-text-secondary mb-4 md:mb-6">Choose how you want to write.</p>
       )}
 
-      <Link href={`/write/freeform?novelId=${novelId}`}>
-        <Card hover className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center text-xl">
-            &gt;
-          </div>
-          <div>
-            <h3 className="font-ui font-medium text-text-primary">Free Write</h3>
-            <p className="text-sm text-text-secondary">Dump your thoughts, AI turns it into prose</p>
-          </div>
-        </Card>
-      </Link>
+      <div className="space-y-3">
+        <Link href={`/write/freeform?novelId=${novelId}`}>
+          <Card hover variant="glass" className="flex items-center gap-4 group">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10 border border-accent-primary/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </div>
+            <div>
+              <h3 className="font-ui font-medium text-text-primary group-hover:text-accent-primary transition-colors">Free Write</h3>
+              <p className="text-sm text-text-secondary">Dump your thoughts, AI turns it into prose</p>
+            </div>
+          </Card>
+        </Link>
 
-      <Link href={`/write/guided?novelId=${novelId}`} className="block mt-3">
-        <Card hover className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-ink-surface border border-ink-border flex items-center justify-center text-xl">
-            ?
-          </div>
-          <div>
-            <h3 className="font-ui font-medium text-text-primary">Guided Chat</h3>
-            <p className="text-sm text-text-secondary">AI interviews you about your day</p>
-          </div>
-        </Card>
-      </Link>
+        <Link href={`/write/guided?novelId=${novelId}`}>
+          <Card hover variant="glass" className="flex items-center gap-4 group mt-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10 border border-accent-primary/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+            </div>
+            <div>
+              <h3 className="font-ui font-medium text-text-primary group-hover:text-accent-primary transition-colors">Guided Chat</h3>
+              <p className="text-sm text-text-secondary">AI interviews you about your day</p>
+            </div>
+          </Card>
+        </Link>
+      </div>
     </div>
   )
 }

@@ -102,24 +102,62 @@ export function GeneratingAnimation() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-ink-bg/95 backdrop-blur-sm px-6"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-ink-bg/95 backdrop-blur-md px-6"
     >
-      {/* Ink drop */}
-      <motion.div
-        className="w-3 h-3 rounded-full bg-accent-primary mb-10"
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [1, 0.5, 1],
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
+      {/* Subtle particle/star background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-accent-primary/20 rounded-full"
+            style={{
+              left: `${20 + i * 12}%`,
+              top: `${15 + (i % 3) * 25}%`,
+            }}
+            animate={{
+              opacity: [0, 0.5, 0],
+              scale: [0.5, 1.2, 0.5],
+            }}
+            transition={{
+              duration: 3 + i * 0.5,
+              repeat: Infinity,
+              delay: i * 0.7,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Typewriter text */}
-      <div className="h-24 flex items-center justify-center max-w-md w-full">
+      {/* Animated ring pulse */}
+      <div className="relative mb-10">
+        <motion.div
+          className="w-4 h-4 rounded-full bg-accent-primary"
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [1, 0.7, 1],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 rounded-full border border-accent-primary/30"
+          animate={{
+            scale: [1, 3],
+            opacity: [0.5, 0],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeOut',
+          }}
+        />
+      </div>
+
+      {/* Typewriter text in glass container */}
+      <div className="h-28 flex items-center justify-center max-w-md w-full glass-card rounded-2xl px-6">
         <AnimatePresence mode="wait">
           <motion.p
             key={currentIndex}

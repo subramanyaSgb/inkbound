@@ -66,24 +66,31 @@ export default async function HomePage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4 md:mb-8">
-        <h1 className="font-display text-xl md:text-3xl text-text-primary">Your Library</h1>
+        <div>
+          <h1 className="font-display text-xl md:text-3xl text-text-primary">Your Library</h1>
+          <p className="text-xs text-text-muted mt-0.5 hidden md:block">
+            {novelsWithCounts.length} novel{novelsWithCounts.length !== 1 ? 's' : ''}
+          </p>
+        </div>
         <Link href="/novel/new">
-          <Button>+ New Novel</Button>
+          <Button variant="glow">+ New Novel</Button>
         </Link>
       </div>
 
       {novelsWithCounts.length === 0 ? (
         <div className="text-center py-20">
-          <p className="font-display text-lg md:text-2xl text-text-secondary mb-2">No novels yet</p>
-          <p className="text-text-muted mb-6">Start your first novel and turn your life into a story.</p>
+          <p className="font-display text-2xl md:text-3xl text-text-secondary mb-2">Begin your story</p>
+          <p className="text-text-muted mb-8 max-w-sm mx-auto">
+            Create your first novel and turn your everyday life into a beautifully written narrative.
+          </p>
           <Link href="/novel/new">
-            <Button size="lg">Create Your First Novel</Button>
+            <Button size="lg" variant="glow">Create Your First Novel</Button>
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-          {novelsWithCounts.map((novel) => (
-            <NovelCard key={novel.id} novel={novel} progress={progressMap[novel.id]} />
+          {novelsWithCounts.map((novel, i) => (
+            <NovelCard key={novel.id} novel={novel} progress={progressMap[novel.id]} index={i} />
           ))}
         </div>
       )}

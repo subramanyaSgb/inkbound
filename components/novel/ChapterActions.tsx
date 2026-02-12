@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Edit2, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -66,18 +67,20 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
 
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => setShowEditModal(true)}
-          className="text-xs font-ui text-accent-primary hover:text-accent-primary/80 transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-accent-primary hover:bg-ink-surface transition-all"
+          title="Edit chapter"
         >
-          Edit
+          <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={() => setShowDeleteModal(true)}
-          className="text-xs font-ui text-text-muted hover:text-status-error transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-status-error hover:bg-ink-surface transition-all"
+          title="Delete chapter"
         >
-          Delete
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
@@ -85,7 +88,7 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Chapter">
         <div className="space-y-4">
           {/* Quick Edit */}
-          <div className="p-3 rounded-lg border border-ink-border bg-ink-surface">
+          <div className="p-4 rounded-xl glass-card">
             <p className="text-sm font-ui text-text-primary mb-2">Quick Edit</p>
             <p className="text-xs text-text-muted mb-3">
               Tell the AI what to change and it will regenerate the chapter.
@@ -97,7 +100,7 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
             />
             <Button
               size="sm"
-              className="mt-2"
+              className="mt-3"
               onClick={handleQuickEdit}
               isLoading={isQuickEditing}
               disabled={!quickEditInstruction.trim()}
@@ -107,14 +110,14 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
           </div>
 
           {/* Full Edit */}
-          <div className="p-3 rounded-lg border border-ink-border bg-ink-surface">
+          <div className="p-4 rounded-xl glass-card">
             <p className="text-sm font-ui text-text-primary mb-2">Full Edit</p>
             <p className="text-xs text-text-muted mb-3">
               Edit your original entry text and regenerate the entire chapter.
             </p>
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() => {
                 setShowEditModal(false)
                 router.push(`/write/freeform?novelId=${novelId}&chapterId=${chapterId}`)

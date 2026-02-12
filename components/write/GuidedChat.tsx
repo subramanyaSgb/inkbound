@@ -2,6 +2,8 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { ArrowLeft, Send, Sparkles } from 'lucide-react'
 import { useGuidedStore, type ChatMessage } from '@/stores/guided-store'
 import { useWriteStore } from '@/stores/write-store'
 import { Button } from '@/components/ui/Button'
@@ -144,12 +146,13 @@ export function GuidedChat() {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-160px)]">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 pb-3 mb-2 border-b border-ink-border">
+      <div className="flex items-center gap-3 pb-3 mb-2 border-b border-ink-border/50">
         <button
           onClick={handleBack}
-          className="text-sm text-text-muted hover:text-text-secondary transition-colors"
+          className="text-sm text-text-muted hover:text-text-secondary transition-colors flex items-center gap-1.5"
         >
-          &larr; Back
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </button>
         <h2 className="font-display text-base text-text-primary">Guided Chat</h2>
       </div>
@@ -157,20 +160,26 @@ export function GuidedChat() {
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-4">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
             <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2.5 ${
               msg.role === 'user'
-                ? 'bg-accent-primary/20 text-text-primary rounded-br-sm'
-                : 'bg-ink-surface border border-ink-border text-text-secondary rounded-bl-sm'
+                ? 'bg-accent-primary/15 border border-accent-primary/20 text-text-primary rounded-br-sm'
+                : 'glass-card text-text-secondary rounded-bl-sm'
             }`}>
               <p className="text-sm font-body leading-relaxed">{msg.content}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
 
         {isStreaming && streamingContent && (
           <div className="flex justify-start">
-            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-bl-sm px-4 py-2.5 bg-ink-surface border border-ink-border">
+            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-bl-sm px-4 py-2.5 glass-card">
               <p className="text-sm font-body text-text-secondary leading-relaxed">{streamingContent}</p>
             </div>
           </div>
@@ -178,11 +187,11 @@ export function GuidedChat() {
 
         {isStreaming && !streamingContent && (
           <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-ink-surface border border-ink-border">
-              <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="rounded-2xl rounded-bl-sm px-4 py-3 glass-card">
+              <div className="flex gap-1.5">
+                <span className="w-1.5 h-1.5 bg-accent-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-accent-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-accent-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -193,25 +202,30 @@ export function GuidedChat() {
 
       {/* Generate button */}
       {userMessageCount >= 3 && !isStreaming && (
-        <div className="py-2 text-center">
-          <Button onClick={handleGenerate} size="sm">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="py-2 text-center"
+        >
+          <Button onClick={handleGenerate} variant="glow" size="sm" className="gap-1.5">
+            <Sparkles className="w-4 h-4" />
             Generate Chapter
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {/* Input bar */}
-      <div className="flex gap-2 pt-2 border-t border-ink-border">
+      <div className="flex gap-2 pt-2 border-t border-ink-border/50">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Tell me about your day..."
           disabled={isStreaming}
-          className="flex-1 bg-ink-surface border border-ink-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-primary/50 disabled:opacity-50"
+          className="flex-1 bg-ink-glass backdrop-blur-sm border border-ink-border/50 rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-accent-primary/40 focus:shadow-glow-sm disabled:opacity-50 transition-all"
         />
-        <Button onClick={handleSend} disabled={!input.trim() || isStreaming} size="sm">
-          Send
+        <Button onClick={handleSend} disabled={!input.trim() || isStreaming} size="icon" className="rounded-xl">
+          <Send className="w-4 h-4" />
         </Button>
       </div>
     </div>

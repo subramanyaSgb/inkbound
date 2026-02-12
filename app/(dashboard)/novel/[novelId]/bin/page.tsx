@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { ArrowLeft, RotateCcw, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -72,9 +74,10 @@ export default function RecycleBinPage() {
     <div className="max-w-3xl mx-auto">
       <Link
         href={`/novel/${novelId}`}
-        className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-block"
+        className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-flex items-center gap-1.5 transition-colors"
       >
-        &larr; Back to Novel
+        <ArrowLeft className="w-4 h-4" />
+        Back to Novel
       </Link>
 
       <h1 className="font-display text-xl md:text-2xl text-text-primary mb-1">Recycle Bin</h1>
@@ -85,49 +88,56 @@ export default function RecycleBinPage() {
       {loading ? (
         <p className="text-sm text-text-muted py-8 text-center">Loading...</p>
       ) : deletedChapters.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-text-secondary">Recycle bin is empty.</p>
+        <div className="text-center py-16">
+          <p className="text-text-secondary font-display text-lg">Recycle bin is empty</p>
           <p className="text-text-muted text-sm mt-1">Deleted chapters will appear here.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {deletedChapters.map((chapter) => (
-            <div
-              key={chapter.id}
-              className="flex items-start gap-3 p-3 md:p-4 rounded-lg border border-ink-border bg-ink-card"
-            >
-              <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center">
-                <span className="text-xs md:text-sm font-ui text-text-muted">{chapter.chapter_number}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-display text-base text-text-primary truncate">
-                  {chapter.title || `Chapter ${chapter.chapter_number}`}
-                </h3>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Deleted {new Date(chapter.deleted_at!).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                  {' '}&middot; {daysRemaining(chapter.deleted_at!)} days remaining
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => handleRestore(chapter.id)}
-                  disabled={restoringId === chapter.id}
-                  className="text-xs font-ui text-accent-primary hover:text-accent-primary/80 transition-colors disabled:opacity-50"
-                >
-                  {restoringId === chapter.id ? 'Restoring...' : 'Restore'}
-                </button>
-                <button
-                  onClick={() => setPermanentDeleteId(chapter.id)}
-                  className="text-xs font-ui text-text-muted hover:text-status-error transition-colors"
-                >
-                  Delete Forever
-                </button>
-              </div>
-            </div>
-          ))}
+          {deletedChapters.map((chapter, i) => {
+            const days = daysRemaining(chapter.deleted_at!)
+            return (
+              <motion.div
+                key={chapter.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className="flex items-start gap-3 p-3 md:p-4 rounded-xl border border-ink-border/30 bg-ink-card/30 opacity-75 hover:opacity-100 transition-opacity"
+              >
+                <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-ink-surface/50 border border-ink-border/30 flex items-center justify-center">
+                  <span className="text-xs md:text-sm font-ui text-text-muted">{chapter.chapter_number}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display text-base text-text-primary/70 truncate">
+                    {chapter.title || `Chapter ${chapter.chapter_number}`}
+                  </h3>
+                  <p className="text-xs text-text-muted mt-0.5 flex items-center gap-2">
+                    <span>Deleted {new Date(chapter.deleted_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-ui ${days <= 5 ? 'bg-status-error/20 text-status-error' : 'bg-ink-surface/50'}`}>
+                      {days}d left
+                    </span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleRestore(chapter.id)}
+                    disabled={restoringId === chapter.id}
+                    className="p-1.5 rounded-lg text-accent-primary hover:bg-accent-primary/10 transition-all disabled:opacity-50"
+                    title="Restore"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPermanentDeleteId(chapter.id)}
+                    className="p-1.5 rounded-lg text-text-muted hover:text-status-error hover:bg-status-error/10 transition-all"
+                    title="Delete forever"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
       )}
 

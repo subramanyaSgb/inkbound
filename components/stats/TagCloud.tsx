@@ -1,3 +1,4 @@
+import { Hash } from 'lucide-react'
 import type { TagCount } from '@/lib/stats'
 
 interface TagCloudProps {
@@ -7,8 +8,11 @@ interface TagCloudProps {
 export function TagCloud({ tags }: TagCloudProps) {
   if (tags.length === 0) {
     return (
-      <div className="rounded-xl bg-ink-card border border-ink-border p-4 md:p-6">
-        <h3 className="font-display text-base md:text-lg text-text-primary mb-4">Tags</h3>
+      <div className="glass-card rounded-xl p-4 md:p-6">
+        <h3 className="font-display text-base md:text-lg text-text-primary mb-4 flex items-center gap-2">
+          <Hash className="w-4 h-4 text-accent-primary/60" />
+          Tags
+        </h3>
         <p className="text-sm text-text-muted text-center py-4">No tags yet.</p>
       </div>
     )
@@ -18,8 +22,11 @@ export function TagCloud({ tags }: TagCloudProps) {
   const colors = ['text-accent-primary', 'text-text-primary', 'text-text-secondary', 'text-text-muted']
 
   return (
-    <div className="rounded-xl bg-ink-card border border-ink-border p-4 md:p-6">
-      <h3 className="font-display text-base md:text-lg text-text-primary mb-4">Tags</h3>
+    <div className="glass-card rounded-xl p-4 md:p-6">
+      <h3 className="font-display text-base md:text-lg text-text-primary mb-4 flex items-center gap-2">
+        <Hash className="w-4 h-4 text-accent-primary/60" />
+        Tags
+      </h3>
       <div className="flex flex-wrap gap-2">
         {tags.slice(0, 30).map((t) => {
           const ratio = t.count / maxCount

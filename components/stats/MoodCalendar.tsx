@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { computeCalendarData } from '@/lib/stats'
 import type { Chapter } from '@/types'
 import type { DayStats } from '@/lib/stats'
@@ -10,7 +11,7 @@ interface MoodCalendarProps {
 }
 
 function moodColor(score: number | null): string {
-  if (score === null) return 'bg-ink-surface'
+  if (score === null) return 'bg-ink-surface/50'
   if (score < 0.3) return 'bg-mood-negative/60'
   if (score < 0.6) return 'bg-accent-primary/40'
   return 'bg-mood-positive/60'
@@ -37,19 +38,23 @@ export function MoodCalendar({ chapters }: MoodCalendarProps) {
   }
 
   return (
-    <div className="rounded-xl bg-ink-card border border-ink-border p-4 md:p-6">
+    <div className="glass-card rounded-xl p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-base md:text-lg text-text-primary">Mood Calendar</h3>
-        <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="text-text-muted hover:text-text-primary text-sm px-2">&lt;</button>
+        <div className="flex items-center gap-1">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-ink-surface transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
           <span className="text-xs font-ui text-text-secondary min-w-[120px] text-center">{monthName}</span>
-          <button onClick={nextMonth} className="text-text-muted hover:text-text-primary text-sm px-2">&gt;</button>
+          <button onClick={nextMonth} className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-ink-surface transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-1">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] text-text-muted font-ui">{d}</div>
+          <div key={i} className="text-center text-[10px] text-text-muted font-ui py-1">{d}</div>
         ))}
       </div>
 
@@ -61,13 +66,13 @@ export function MoodCalendar({ chapters }: MoodCalendarProps) {
           <button
             key={day.date}
             onClick={() => setTooltip(tooltip?.date === day.date ? null : day)}
-            className={`aspect-square rounded-sm ${moodColor(day.score)} transition-colors hover:ring-1 hover:ring-accent-primary/30`}
+            className={`aspect-square rounded-lg ${moodColor(day.score)} transition-all duration-200 hover:ring-1 hover:ring-accent-primary/40 hover:scale-110`}
           />
         ))}
       </div>
 
       {tooltip && tooltip.title && (
-        <div className="mt-3 p-2 rounded-lg bg-ink-surface border border-ink-border">
+        <div className="mt-3 p-3 rounded-lg glass-card">
           <p className="text-xs text-text-secondary font-ui">
             {new Date(tooltip.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>

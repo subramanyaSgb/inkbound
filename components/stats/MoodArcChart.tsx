@@ -28,17 +28,17 @@ export function MoodArcChart({ data }: MoodArcChartProps) {
       })()
 
   return (
-    <div className="rounded-xl bg-ink-card border border-ink-border p-4 md:p-6">
+    <div className="glass-card rounded-xl p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-base md:text-lg text-text-primary">Mood Arc</h3>
-        <div className="flex gap-1">
+        <div className="flex gap-0.5 bg-ink-surface/50 rounded-lg p-0.5">
           {ranges.map(r => (
             <button
               key={r.label}
               onClick={() => setActiveRange(r.label)}
-              className={`px-2 py-1 text-xs font-ui rounded transition-colors ${
+              className={`px-2.5 py-1 text-xs font-ui rounded-md transition-all duration-200 ${
                 activeRange === r.label
-                  ? 'bg-ink-highlight text-accent-primary'
+                  ? 'bg-accent-primary/15 text-accent-primary shadow-sm'
                   : 'text-text-muted hover:text-text-secondary'
               }`}
             >
@@ -55,28 +55,35 @@ export function MoodArcChart({ data }: MoodArcChartProps) {
           <AreaChart data={filtered}>
             <defs>
               <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#C4956A" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#C4956A" stopOpacity={0} />
+                <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#D4AF37" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
               dataKey="date"
               tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              stroke="#6B5F52"
+              stroke="#71717A"
               fontSize={10}
               tickLine={false}
               axisLine={false}
             />
             <YAxis domain={[0, 1]} hide />
             <Tooltip
-              contentStyle={{ backgroundColor: '#1A1620', border: '1px solid #2E2836', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{
+                backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(39, 39, 42, 0.5)',
+                borderRadius: 12,
+                fontSize: 12,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              }}
               labelFormatter={(d) => new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               formatter={(value: number | undefined) => [`${((value ?? 0) * 100).toFixed(0)}%`, 'Mood']}
             />
             <Area
               type="monotone"
               dataKey="score"
-              stroke="#C4956A"
+              stroke="#D4AF37"
               strokeWidth={2}
               fill="url(#moodGradient)"
             />

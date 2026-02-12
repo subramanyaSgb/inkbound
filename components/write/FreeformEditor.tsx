@@ -13,6 +13,8 @@ export function FreeformEditor() {
   const [dropdownFilter, setDropdownFilter] = useState('')
   const [mentionStart, setMentionStart] = useState<number>(-1)
 
+  const wordCount = rawEntry.trim() ? rawEntry.trim().split(/\s+/).length : 0
+
   // Load profiles once
   useEffect(() => {
     const supabase = createClient()
@@ -98,26 +100,34 @@ export function FreeformEditor() {
           }
         }}
         placeholder="Tell me about your day... Use @ to mention people and places."
-        className="w-full min-h-[250px] md:min-h-[300px] bg-transparent font-body text-base md:text-lg text-text-primary leading-relaxed placeholder:text-text-muted/50 resize-none focus:outline-none"
+        className="w-full min-h-[250px] md:min-h-[300px] bg-transparent font-body text-base md:text-lg text-text-primary leading-relaxed placeholder:text-text-muted/40 resize-none focus:outline-none"
       />
 
+      {/* Word count */}
+      <div className="absolute bottom-0 right-0 text-xs text-text-muted/50 font-ui">
+        {wordCount} words
+      </div>
+
       {showDropdown && filteredProfiles.length > 0 && (
-        <div className="absolute z-20 mt-1 w-64 max-h-48 overflow-y-auto rounded-lg border border-ink-border bg-ink-card shadow-lg">
+        <div className="absolute z-20 mt-1 w-64 max-h-48 overflow-y-auto rounded-xl glass-card shadow-glass">
           {filteredProfiles.map(profile => (
             <button
               key={profile.id}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); handleSelect(profile) }}
-              className="w-full text-left px-3 py-2 hover:bg-ink-surface transition-colors"
+              className="w-full text-left px-3 py-2 hover:bg-ink-surface/80 transition-colors first:rounded-t-xl last:rounded-b-xl"
             >
-              <p className="text-sm font-ui text-text-primary">
+              <p className="text-sm font-ui text-text-primary flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-accent-primary/20 flex items-center justify-center text-xs text-accent-primary flex-shrink-0">
+                  {profile.name.charAt(0)}
+                </span>
                 {profile.name}
                 {profile.relationship && (
-                  <span className="text-text-muted"> ({profile.relationship})</span>
+                  <span className="text-text-muted text-xs">({profile.relationship})</span>
                 )}
               </p>
               {profile.nickname && (
-                <p className="text-xs text-text-muted">&ldquo;{profile.nickname}&rdquo;</p>
+                <p className="text-xs text-text-muted ml-8">&ldquo;{profile.nickname}&rdquo;</p>
               )}
             </button>
           ))}

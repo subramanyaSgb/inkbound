@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Settings, LogOut, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export function Header() {
@@ -17,7 +19,6 @@ export function Header() {
     router.refresh()
   }
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -29,38 +30,48 @@ export function Header() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-border bg-ink-bg/80 backdrop-blur-sm px-3 py-2 md:px-4 md:py-3 lg:px-6">
-      <h1 className="font-display text-xl md:text-2xl text-accent-primary">Inkbound</h1>
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-border/50 bg-ink-bg/70 backdrop-blur-md px-3 py-2 md:px-4 md:py-3 lg:px-6">
+      <Link href="/">
+        <h1 className="font-display text-xl md:text-2xl text-accent-primary">Inkbound</h1>
+      </Link>
 
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setOpen(!open)}
-          className="w-8 h-8 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center hover:border-accent-primary/50 transition-colors"
+          className="w-9 h-9 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center hover:border-accent-primary/40 hover:shadow-glow-sm transition-all min-w-[44px] min-h-[44px]"
           aria-label="Profile menu"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-secondary">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+          <User className="w-4 h-4 text-text-secondary" />
         </button>
 
-        {open && (
-          <div className="absolute right-0 mt-2 w-40 rounded-lg border border-ink-border bg-ink-card shadow-lg overflow-hidden">
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-sm font-ui text-text-secondary hover:bg-ink-surface hover:text-text-primary transition-colors"
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -5 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 mt-2 w-44 glass-card rounded-xl shadow-glass overflow-hidden"
             >
-              Settings
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2.5 text-sm font-ui text-text-secondary hover:bg-ink-surface hover:text-status-error transition-colors border-t border-ink-border"
-            >
-              Sign Out
-            </button>
-          </div>
-        )}
+              <Link
+                href="/settings"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-ui text-text-secondary hover:bg-ink-surface/80 hover:text-text-primary transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </Link>
+              <div className="border-t border-ink-border/50" />
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 text-left px-4 py-2.5 text-sm font-ui text-text-secondary hover:bg-ink-surface/80 hover:text-status-error transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   )

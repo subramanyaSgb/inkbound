@@ -38,21 +38,30 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
   const streak = computeStreak(allChapters)
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link href={`/novel/${novelId}`} className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-block">
-        &larr; Back to Novel
+    <div className="max-w-4xl mx-auto">
+      <Link href={`/novel/${novelId}`} className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-flex items-center gap-1 transition-colors">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        Back to Novel
       </Link>
       <h1 className="font-display text-xl md:text-2xl text-text-primary mb-1">{novel.title}</h1>
       <p className="text-xs text-text-muted mb-4 md:mb-6">Your story in numbers</p>
 
       <div className="space-y-3 md:space-y-4">
         <StreakBanner current={streak.current} longest={streak.longest} total={streak.total} />
-        <MoodArcChart data={moodData} />
-        <MoodCalendar chapters={allChapters} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <MoodArcChart data={moodData} />
+          <MoodCalendar chapters={allChapters} />
+        </div>
+
         <WordStats {...wordStats} />
         <GenreOfYourLife novelId={novelId} />
-        <TagCloud tags={tags} />
-        <TopSoundtracks soundtracks={soundtracks} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <TagCloud tags={tags} />
+          <TopSoundtracks soundtracks={soundtracks} />
+        </div>
+
         <BestQuotes chapters={allChapters} />
       </div>
     </div>
