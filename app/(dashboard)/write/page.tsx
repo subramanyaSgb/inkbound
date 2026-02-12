@@ -7,14 +7,23 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: novels } = await supabase
-    .from('novels')
-    .select('id, title')
-    .eq('user_id', user!.id)
-    .eq('is_active', true)
-    .order('updated_at', { ascending: false })
+  if (!user) redirect('/login')
 
-  if (!novels || novels.length === 0) {
+  let novels: { id: string; title: string }[] = []
+  try {
+    const { data } = await supabase
+      .from('novels')
+      .select('id, title')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false })
+    novels = data || []
+  } catch {
+    // If query fails, redirect home instead of crashing
+    redirect('/')
+  }
+
+  if (novels.length === 0) {
     redirect('/novel/new')
   }
 

@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card'
 import { createClient } from '@/lib/supabase/client'
 import { scanForUnknownReferences, type UnknownReference } from '@/lib/profile-scanner'
 import { ProfileQuestionModal, type ProfileAnswer } from '@/components/write/ProfileQuestionModal'
+import { entrySchema } from '@/lib/validations'
 import type { StoryProfile } from '@/types'
 
 export default function FreeformWritePage() {
@@ -22,6 +23,7 @@ export default function FreeformWritePage() {
   const router = useRouter()
   const { rawEntry, entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, setEditingChapterId, reset } = useWriteStore()
   const [error, setError] = useState('')
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -84,8 +86,19 @@ export default function FreeformWritePage() {
   }
 
   async function handleGenerate() {
-    if (!rawEntry.trim() || !novelId) return
+    if (!novelId) return
     setError('')
+
+    const result = entrySchema.safeParse({ rawEntry, entryDate, novelId })
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {}
+      result.error.issues.forEach(issue => {
+        fieldErrors[issue.path[0] as string] = issue.message
+      })
+      setValidationErrors(fieldErrors)
+      return
+    }
+    setValidationErrors({})
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -164,6 +177,8 @@ export default function FreeformWritePage() {
       </motion.div>
 
       {error && <p className="text-sm text-status-error mt-4">{error}</p>}
+      {validationErrors.rawEntry && <p className="text-xs text-status-error mt-2">{validationErrors.rawEntry}</p>}
+      {validationErrors.entryDate && <p className="text-xs text-status-error mt-1">{validationErrors.entryDate}</p>}
 
       <div className="flex flex-col-reverse sm:flex-row justify-end mt-4 md:mt-6 gap-2 md:gap-3">
         <Button variant="secondary" onClick={() => { reset(); router.back() }}>

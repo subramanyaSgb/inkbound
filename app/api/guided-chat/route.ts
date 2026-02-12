@@ -1,28 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const { novelId, messages } = await request.json()
+    // Rate limit: 20 requests per minute per user
+    const { allowed } = checkRateLimit(`guided-chat:${user.id}`, 20, 60000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
+    }
 
-  if (!novelId || !Array.isArray(messages)) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-  }
+    const { novelId, messages } = await request.json()
 
-  // Fetch novel for context
-  const { data: novel } = await supabase
-    .from('novels')
-    .select('title, character_name, genre')
-    .eq('id', novelId)
-    .single()
+    if (!novelId || !Array.isArray(messages)) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
 
-  const systemPrompt = `You are a warm, curious, and empathetic interviewer helping someone journal about their day. Your goal is to extract rich, detailed stories from their daily life that can be turned into a novel chapter.
+    // Fetch novel for context
+    const { data: novel } = await supabase
+      .from('novels')
+      .select('title, character_name, genre')
+      .eq('id', novelId)
+      .single()
+
+    const systemPrompt = `You are a warm, curious, and empathetic interviewer helping someone journal about their day. Your goal is to extract rich, detailed stories from their daily life that can be turned into a novel chapter.
 
 CONTEXT:
 - Their novel is called "${novel?.title || 'My Novel'}"
@@ -40,35 +51,63 @@ RULES:
 6. Never use emojis. Keep a literary, warm tone.
 7. Start with a simple, open question about their day.`
 
-  const apiMessages = [
-    { role: 'system', content: systemPrompt },
-    ...messages,
-  ]
+    const apiMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ]
 
-  try {
-    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'moonshotai/kimi-k2.5',
-        messages: apiMessages,
-        max_tokens: 256,
-        temperature: 0.9,
-        stream: false,
-      }),
-    })
-
-    if (!response.ok) {
-      const err = await response.text()
-      console.error('NVIDIA API error:', err)
-      return NextResponse.json({ error: 'AI service error' }, { status: 500 })
+    let response
+    try {
+      response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'moonshotai/kimi-k2.5',
+          messages: apiMessages,
+          max_tokens: 256,
+          temperature: 0.9,
+          stream: false,
+        }),
+      })
+    } catch (fetchError) {
+      console.error('NVIDIA API fetch failed:', fetchError)
+      return NextResponse.json(
+        { error: 'Could not reach AI service. Please try again.' },
+        { status: 502 }
+      )
     }
 
-    const data = await response.json()
+    if (!response.ok) {
+      const errText = await response.text().catch(() => 'Unknown error')
+      console.error(`NVIDIA API error (${response.status}):`, errText)
+      return NextResponse.json(
+        { error: 'AI service returned an error. Please try again.' },
+        { status: 502 }
+      )
+    }
+
+    let data
+    try {
+      data = await response.json()
+    } catch {
+      console.error('Failed to parse NVIDIA API response as JSON')
+      return NextResponse.json(
+        { error: 'AI service returned an invalid response.' },
+        { status: 502 }
+      )
+    }
+
     const content = data.choices?.[0]?.message?.content || ''
+
+    if (!content) {
+      return NextResponse.json(
+        { error: 'AI returned an empty response. Please try again.' },
+        { status: 502 }
+      )
+    }
 
     // Return as SSE so the client streaming parser still works
     const encoder = new TextEncoder()

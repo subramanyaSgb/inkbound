@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ChapterReader } from '@/components/novel/ChapterReader'
 import { Button } from '@/components/ui/Button'
+import type { Chapter } from '@/types'
 
 export default async function ChapterPage({
   params,
@@ -12,47 +13,67 @@ export default async function ChapterPage({
   const supabase = await createClient()
   const { novelId, chapterId } = params
 
-  const { data: chapter } = await supabase
-    .from('chapters')
-    .select('*')
-    .eq('id', chapterId)
-    .eq('novel_id', novelId)
-    .single()
+  let chapter: Chapter | null = null
+  try {
+    const { data } = await supabase
+      .from('chapters')
+      .select('*')
+      .eq('id', chapterId)
+      .eq('novel_id', novelId)
+      .single()
+    chapter = data
+  } catch {
+    notFound()
+  }
 
   if (!chapter) notFound()
 
-  // Auto-track reading progress
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    await supabase
-      .from('reading_progress')
-      .upsert({
-        user_id: user.id,
-        novel_id: novelId,
-        last_chapter_id: chapterId,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,novel_id' })
+  // Auto-track reading progress (non-critical, silently continue on failure)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase
+        .from('reading_progress')
+        .upsert({
+          user_id: user.id,
+          novel_id: novelId,
+          last_chapter_id: chapterId,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,novel_id' })
+    }
+  } catch {
+    // Reading progress update failed — silently continue
   }
 
-  const { data: prevChapter } = await supabase
-    .from('chapters')
-    .select('id')
-    .eq('novel_id', novelId)
-    .is('deleted_at', null)
-    .lt('chapter_number', chapter.chapter_number)
-    .order('chapter_number', { ascending: false })
-    .limit(1)
-    .single()
+  let prevChapter: { id: string } | null = null
+  let nextChapter: { id: string } | null = null
 
-  const { data: nextChapter } = await supabase
-    .from('chapters')
-    .select('id')
-    .eq('novel_id', novelId)
-    .is('deleted_at', null)
-    .gt('chapter_number', chapter.chapter_number)
-    .order('chapter_number', { ascending: true })
-    .limit(1)
-    .single()
+  try {
+    const [prevResult, nextResult] = await Promise.all([
+      supabase
+        .from('chapters')
+        .select('id')
+        .eq('novel_id', novelId)
+        .is('deleted_at', null)
+        .lt('chapter_number', chapter.chapter_number)
+        .order('chapter_number', { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from('chapters')
+        .select('id')
+        .eq('novel_id', novelId)
+        .is('deleted_at', null)
+        .gt('chapter_number', chapter.chapter_number)
+        .order('chapter_number', { ascending: true })
+        .limit(1)
+        .single(),
+    ])
+    prevChapter = prevResult.data
+    nextChapter = nextResult.data
+  } catch {
+    // Navigation failed — prev/next will just not show
+  }
 
   return (
     <div className="max-w-3xl mx-auto pb-8 md:pb-12">

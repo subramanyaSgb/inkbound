@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { GENRES, POVS, WRITING_STYLES } from '@/lib/constants'
+import { createNovelSchema } from '@/lib/validations'
 import type { Genre, POV, WritingStyle } from '@/types'
 
 export default function NewNovelPage() {
@@ -21,13 +22,33 @@ export default function NewNovelPage() {
   const [description, setDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const router = useRouter()
   const supabase = createClient()
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
+
+    const result = createNovelSchema.safeParse({
+      title,
+      characterName,
+      genre,
+      pov,
+      writingStyle,
+      description: description || undefined,
+    })
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {}
+      result.error.issues.forEach(issue => {
+        fieldErrors[issue.path[0] as string] = issue.message
+      })
+      setErrors(fieldErrors)
+      return
+    }
+    setErrors({})
+
+    setIsLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -77,19 +98,25 @@ export default function NewNovelPage() {
         <motion.div custom={0} initial="hidden" animate="show" variants={stagger}>
           <Card variant="glass">
             <div className="space-y-4">
-              <Input
-                label="Novel Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="My Life Story"
-                required
-              />
-              <Input
-                label="Protagonist Name"
-                value={characterName}
-                onChange={(e) => setCharacterName(e.target.value)}
-                placeholder="What should we call you in the novel?"
-              />
+              <div>
+                <Input
+                  label="Novel Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="My Life Story"
+                  required
+                />
+                {errors.title && <p className="text-xs text-status-error mt-1">{errors.title}</p>}
+              </div>
+              <div>
+                <Input
+                  label="Protagonist Name"
+                  value={characterName}
+                  onChange={(e) => setCharacterName(e.target.value)}
+                  placeholder="What should we call you in the novel?"
+                />
+                {errors.characterName && <p className="text-xs text-status-error mt-1">{errors.characterName}</p>}
+              </div>
               <Input
                 label="Start Date (optional)"
                 type="date"
@@ -104,6 +131,7 @@ export default function NewNovelPage() {
                   placeholder="What is this novel about?"
                   className="w-full rounded-lg border border-ink-border bg-ink-surface/80 px-4 py-2.5 font-ui text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:bg-ink-glass focus:backdrop-blur-sm focus:border-accent-primary/50 focus:shadow-glow-sm transition-all duration-200 min-h-[80px] resize-y"
                 />
+                {errors.description && <p className="text-xs text-status-error mt-1">{errors.description}</p>}
               </div>
             </div>
           </Card>

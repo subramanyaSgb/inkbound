@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { GENRES, POVS, WRITING_STYLES } from '@/lib/constants'
+import { updateNovelSchema } from '@/lib/validations'
 import type { Novel, Genre, POV, WritingStyle } from '@/types'
 
 export default function NovelSettingsPage({ params }: { params: { novelId: string } }) {
@@ -20,6 +21,7 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
   const [pov, setPov] = useState<POV>('first')
   const [writingStyle, setWritingStyle] = useState<WritingStyle>('modern')
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
@@ -45,6 +47,17 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
   }, [params.novelId, supabase])
 
   async function handleSave() {
+    const result = updateNovelSchema.safeParse({ title, characterName })
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {}
+      result.error.issues.forEach(issue => {
+        fieldErrors[issue.path[0] as string] = issue.message
+      })
+      setErrors(fieldErrors)
+      return
+    }
+    setErrors({})
+
     setIsSaving(true)
     await supabase
       .from('novels')
@@ -81,8 +94,14 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card variant="glass">
             <div className="space-y-4">
-              <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-              <Input label="Protagonist Name" value={characterName} onChange={(e) => setCharacterName(e.target.value)} />
+              <div>
+                <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+                {errors.title && <p className="text-xs text-status-error mt-1">{errors.title}</p>}
+              </div>
+              <div>
+                <Input label="Protagonist Name" value={characterName} onChange={(e) => setCharacterName(e.target.value)} />
+                {errors.characterName && <p className="text-xs text-status-error mt-1">{errors.characterName}</p>}
+              </div>
             </div>
           </Card>
         </motion.div>

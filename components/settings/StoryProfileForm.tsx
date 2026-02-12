@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { storyProfileSchema } from '@/lib/validations'
 import type { StoryProfile, StoryProfileType } from '@/types'
 
 interface StoryProfileFormProps {
@@ -25,9 +26,27 @@ export function StoryProfileForm({ type, profile, onSave, onCancel }: StoryProfi
   const [nickname, setNickname] = useState(profile?.nickname || '')
   const [details, setDetails] = useState<Record<string, string>>(profile?.details || {})
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    const result = storyProfileSchema.safeParse({
+      name,
+      relationship: relationship || undefined,
+      nickname: nickname || undefined,
+      details: Object.keys(details).length > 0 ? details : undefined,
+    })
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {}
+      result.error.issues.forEach(issue => {
+        fieldErrors[issue.path[0] as string] = issue.message
+      })
+      setErrors(fieldErrors)
+      return
+    }
+    setErrors({})
+
     setIsSaving(true)
     await onSave({ name, relationship, nickname, details })
     setIsSaving(false)
@@ -40,7 +59,10 @@ export function StoryProfileForm({ type, profile, onSave, onCancel }: StoryProfi
   return (
     <Card variant="glass" compact>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Input label="Name" value={name} onChange={e => setName(e.target.value)} required />
+        <div>
+          <Input label="Name" value={name} onChange={e => setName(e.target.value)} required />
+          {errors.name && <p className="text-xs text-status-error mt-1">{errors.name}</p>}
+        </div>
         {type === 'character' && (
           <Input label="Relationship" value={relationship} onChange={e => setRelationship(e.target.value)} placeholder="e.g. wife, friend, brother" />
         )}

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { computeMoodArc, computeTagCounts, computeWordStats, computeStreak } from '@/lib/stats'
 import { StreakBanner } from '@/components/stats/StreakBanner'
@@ -13,22 +14,30 @@ export default async function GlobalStatsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: novels } = await supabase
-    .from('novels')
-    .select('id')
-    .eq('user_id', user!.id)
-
-  const novelIds = (novels || []).map(n => n.id)
+  if (!user) redirect('/login')
 
   let allChapters: Chapter[] = []
-  if (novelIds.length > 0) {
-    const { data: chapters } = await supabase
-      .from('chapters')
-      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, word_count, deleted_at')
-      .in('novel_id', novelIds)
-      .is('deleted_at', null)
-      .order('entry_date', { ascending: true })
-    allChapters = (chapters || []) as Chapter[]
+
+  try {
+    const { data: novels } = await supabase
+      .from('novels')
+      .select('id')
+      .eq('user_id', user.id)
+
+    const novelIds = (novels || []).map(n => n.id)
+
+    if (novelIds.length > 0) {
+      const { data: chapters } = await supabase
+        .from('chapters')
+        .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, word_count, deleted_at')
+        .in('novel_id', novelIds)
+        .is('deleted_at', null)
+        .order('entry_date', { ascending: true })
+      allChapters = (chapters || []) as Chapter[]
+    }
+  } catch {
+    // If queries fail, show empty stats
+    allChapters = []
   }
 
   const moodData = computeMoodArc(allChapters)

@@ -15,21 +15,32 @@ export default async function NovelStatsPage({ params }: { params: { novelId: st
   const { novelId } = params
 
   // Run novel and chapters queries in parallel; select only needed columns
-  const [novelResult, chaptersResult] = await Promise.all([
-    supabase.from('novels').select('title').eq('id', novelId).single(),
-    supabase.from('chapters')
-      .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, word_count, deleted_at')
-      .eq('novel_id', novelId)
-      .is('deleted_at', null)
-      .order('entry_date', { ascending: true }),
-  ])
+  let novel: { title: string } | null = null
+  let allChapters: import('@/types').Chapter[] = []
 
-  const novel = novelResult.data
+  try {
+    const [novelResult, chaptersResult] = await Promise.all([
+      supabase.from('novels').select('title').eq('id', novelId).single(),
+      supabase.from('chapters')
+        .select('id, novel_id, entry_date, title, chapter_number, mood, mood_score, tags, word_count, deleted_at')
+        .eq('novel_id', novelId)
+        .is('deleted_at', null)
+        .order('entry_date', { ascending: true }),
+    ])
+
+    novel = novelResult.data
+    allChapters = (chaptersResult.data || []) as import('@/types').Chapter[]
+  } catch {
+    // If the parallel fetch fails, try just the novel
+    try {
+      const { data } = await supabase.from('novels').select('title').eq('id', novelId).single()
+      novel = data
+    } catch {
+      notFound()
+    }
+  }
+
   if (!novel) notFound()
-
-  const chapters = chaptersResult.data as import('@/types').Chapter[] | null
-
-  const allChapters = chapters || []
   const moodData = computeMoodArc(allChapters)
   const tags = computeTagCounts(allChapters)
   const wordStats = computeWordStats(allChapters)

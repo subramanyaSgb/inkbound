@@ -27,8 +27,28 @@ const jetbrains = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Inkbound',
-  description: 'Your life, bound in ink.',
+  title: {
+    default: 'Inkbound — Your Life, Bound in Ink',
+    template: '%s | Inkbound',
+  },
+  description: 'An AI-powered life journal that transforms your daily experiences into an evolving novel.',
+  keywords: ['journal', 'AI writing', 'novel', 'life story', 'diary'],
+  authors: [{ name: 'Inkbound' }],
+  openGraph: {
+    title: 'Inkbound — Your Life, Bound in Ink',
+    description: 'An AI-powered life journal that transforms your daily experiences into an evolving novel.',
+    siteName: 'Inkbound',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Inkbound — Your Life, Bound in Ink',
+    description: 'An AI-powered life journal that transforms your daily experiences into an evolving novel.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

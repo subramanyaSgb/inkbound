@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildChapterPrompt } from '@/lib/ai/prompts'
 import { generateChapter } from '@/lib/ai/chapter-generator'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +11,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 5 requests per minute per user
+    const { allowed } = checkRateLimit(`generate:${user.id}`, 5, 60000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      )
     }
 
     const { novelId, rawEntry, entryDate, chapterId, editInstruction } = await request.json()
@@ -118,7 +128,29 @@ export async function POST(request: NextRequest) {
       isQuickEdit ? editInstruction : undefined
     )
 
-    const result = await generateChapter(system, userPrompt)
+    let result
+    try {
+      result = await generateChapter(system, userPrompt)
+    } catch (genError: unknown) {
+      console.error('AI generation failed:', genError)
+      const message = genError instanceof Error ? genError.message : 'Unknown AI error'
+      if (message.includes('API error')) {
+        return NextResponse.json(
+          { error: 'AI service is temporarily unavailable. Please try again in a moment.' },
+          { status: 502 }
+        )
+      }
+      if (message.includes('JSON')) {
+        return NextResponse.json(
+          { error: 'AI returned an invalid response. Please try again.' },
+          { status: 502 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Failed to generate chapter. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     // Save chapter
     let savedChapter

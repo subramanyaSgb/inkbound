@@ -1,31 +1,50 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { NovelCard } from '@/components/novel/NovelCard'
 import { Button } from '@/components/ui/Button'
-import type { NovelWithChapterCount } from '@/types'
+import type { Novel, NovelWithChapterCount } from '@/types'
 
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch novels, chapters summary, and reading progress in parallel (3 queries instead of 3N+1)
-  const [novelsResult, progressResult] = await Promise.all([
-    supabase
-      .from('novels')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('updated_at', { ascending: false }),
-    supabase
-      .from('reading_progress')
-      .select('novel_id, last_chapter_id, chapters_read'),
-  ])
+  if (!user) redirect('/login')
 
-  const novels = novelsResult.data || []
+  let novels: Novel[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let progressData: { novel_id: string; last_chapter_id: string | null; chapters_read: number }[] = []
+
+  try {
+    // Fetch novels, chapters summary, and reading progress in parallel (3 queries instead of 3N+1)
+    const [novelsResult, progressResult] = await Promise.all([
+      supabase
+        .from('novels')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false }),
+      supabase
+        .from('reading_progress')
+        .select('novel_id, last_chapter_id, chapters_read'),
+    ])
+
+    novels = novelsResult.data || []
+    progressData = progressResult.data || []
+  } catch {
+    // If queries fail, show empty state
+    novels = []
+    progressData = []
+  }
+
   const novelIds = novels.map(n => n.id)
 
   // Fetch all chapters (only needed fields) and volumes in parallel for all novels at once
-  const [chaptersResult, volumesResult] = novelIds.length > 0
-    ? await Promise.all([
+  let chaptersData: { novel_id: string; entry_date: string }[] = []
+  let volumesData: { novel_id: string }[] = []
+
+  if (novelIds.length > 0) {
+    try {
+      const [chaptersResult, volumesResult] = await Promise.all([
         supabase
           .from('chapters')
           .select('novel_id, entry_date')
@@ -37,11 +56,18 @@ export default async function HomePage() {
           .select('novel_id')
           .in('novel_id', novelIds),
       ])
-    : [{ data: [] }, { data: [] }]
+      chaptersData = chaptersResult.data || []
+      volumesData = volumesResult.data || []
+    } catch {
+      // Non-critical: continue without chapter/volume data
+      chaptersData = []
+      volumesData = []
+    }
+  }
 
   // Compute counts from fetched data (in-memory, no extra queries)
   const chaptersByNovel: Record<string, { count: number; latestDate: string | null }> = {}
-  for (const ch of chaptersResult.data || []) {
+  for (const ch of chaptersData) {
     if (!chaptersByNovel[ch.novel_id]) {
       chaptersByNovel[ch.novel_id] = { count: 0, latestDate: ch.entry_date }
     }
@@ -49,7 +75,7 @@ export default async function HomePage() {
   }
 
   const volumeCountByNovel: Record<string, number> = {}
-  for (const v of volumesResult.data || []) {
+  for (const v of volumesData) {
     volumeCountByNovel[v.novel_id] = (volumeCountByNovel[v.novel_id] || 0) + 1
   }
 
@@ -62,7 +88,7 @@ export default async function HomePage() {
 
   // Build reading progress map
   const progressMap: Record<string, { lastChapterId: string; chaptersRead: number; totalChapters: number }> = {}
-  for (const p of progressResult.data || []) {
+  for (const p of progressData) {
     if (p.last_chapter_id) {
       progressMap[p.novel_id] = {
         lastChapterId: p.last_chapter_id,

@@ -3,23 +3,38 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ChapterList } from '@/components/novel/ChapterList'
 import { Button } from '@/components/ui/Button'
+import type { Chapter, Novel } from '@/types'
 
 export default async function NovelDetailPage({ params }: { params: { novelId: string } }) {
   const supabase = await createClient()
   const { novelId } = params
 
   // Run all 3 queries in parallel instead of sequentially
-  const [novelResult, chaptersResult, deletedResult] = await Promise.all([
-    supabase.from('novels').select('*').eq('id', novelId).single(),
-    supabase.from('chapters').select('*').eq('novel_id', novelId).is('deleted_at', null).order('chapter_number', { ascending: false }),
-    supabase.from('chapters').select('*', { count: 'exact', head: true }).eq('novel_id', novelId).not('deleted_at', 'is', null),
-  ])
+  let novel: Novel | null = null
+  let chapters: Chapter[] = []
+  let deletedCount: number | null = 0
 
-  const novel = novelResult.data
+  try {
+    const [novelResult, chaptersResult, deletedResult] = await Promise.all([
+      supabase.from('novels').select('*').eq('id', novelId).single(),
+      supabase.from('chapters').select('*').eq('novel_id', novelId).is('deleted_at', null).order('chapter_number', { ascending: false }),
+      supabase.from('chapters').select('*', { count: 'exact', head: true }).eq('novel_id', novelId).not('deleted_at', 'is', null),
+    ])
+
+    novel = novelResult.data
+    chapters = chaptersResult.data || []
+    deletedCount = deletedResult.count
+  } catch {
+    // If the parallel fetch fails entirely, try to fetch just the novel
+    try {
+      const { data } = await supabase.from('novels').select('*').eq('id', novelId).single()
+      novel = data
+    } catch {
+      notFound()
+    }
+  }
+
   if (!novel) notFound()
-
-  const chapters = chaptersResult.data
-  const deletedCount = deletedResult.count
 
   return (
     <div className="max-w-3xl mx-auto">
