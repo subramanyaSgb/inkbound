@@ -4,7 +4,7 @@
 
 **Version:** 1.0
 **Date:** February 8, 2026
-**Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Supabase + Anthropic API
+**Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Supabase + NVIDIA API (Kimi K2.5)
 **Deployment:** Vercel
 **Design Philosophy:** Mobile-first, dark & moody leather journal aesthetic
 
@@ -58,7 +58,7 @@ Inkbound is a private, AI-powered life journal that transforms your everyday exp
 
 | Technology | Purpose |
 |---|---|
-| **Anthropic Claude API** (claude-sonnet-4-20250514) | Novel chapter generation, character profiles, life stats, guided conversations, cover prompts |
+| **NVIDIA API** (moonshotai/kimi-k2.5) | Novel chapter generation, character profiles, life stats, cover prompts |
 | **Image Generation API** (DALL·E 3 or Stable Diffusion) | Dynamic cover page generation |
 | **Spotify API** *(optional, Phase 3)* | Soundtrack suggestions per chapter |
 
@@ -95,7 +95,6 @@ inkbound/
 │   │   ├── write/
 │   │   │   ├── page.tsx                # Entry mode selector
 │   │   │   ├── freeform/page.tsx       # Free-form writing
-│   │   │   ├── guided/page.tsx         # AI-guided conversation
 │   │   │   └── structured/page.tsx     # Structured prompts
 │   │   ├── time-machine/page.tsx       # On this day...
 │   │   ├── settings/page.tsx           # App settings & themes
@@ -986,8 +985,8 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Anthropic
-ANTHROPIC_API_KEY=
+# NVIDIA (Kimi K2.5)
+NVIDIA_API_KEY=
 
 # Image Generation
 OPENAI_API_KEY=                    # For DALL·E 3 covers

@@ -87,6 +87,17 @@ export default async function WritePage({ searchParams }: { searchParams: { nove
           </Card>
         </Link>
 
+        <Link href={`/write/structured?novelId=${novelId}`}>
+          <Card hover variant="glass" className="flex items-center gap-4 group">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10 border border-accent-primary/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+            </div>
+            <div>
+              <h3 className="font-ui font-medium text-text-primary group-hover:text-accent-primary transition-colors">Prompted</h3>
+              <p className="text-sm text-text-secondary">Answer guided questions, AI weaves them together</p>
+            </div>
+          </Card>
+        </Link>
       </div>
     </div>
   )

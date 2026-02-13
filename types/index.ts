@@ -68,7 +68,7 @@ export interface Chapter {
 export type Genre = 'literary' | 'comedy' | 'thriller' | 'fantasy' | 'romance' | 'scifi' | 'poetic' | 'noir'
 export type POV = 'first' | 'third' | 'second'
 export type WritingStyle = 'modern' | 'classic' | 'murakami' | 'hemingway' | 'whimsical' | 'stream'
-export type EntryMode = 'freeform' | 'guided' | 'structured'
+export type EntryMode = 'freeform' | 'structured'
 
 export interface ChapterGenerationResponse {
   title: string

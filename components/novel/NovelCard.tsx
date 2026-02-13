@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { BookOpen } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -39,10 +40,12 @@ export function NovelCard({ novel, progress, index = 0 }: NovelCardProps) {
             {/* Cover placeholder */}
             <div className={`aspect-square w-16 md:aspect-[3/4] md:w-full flex-shrink-0 rounded-lg bg-gradient-to-br ${gradient} border border-ink-border/50 flex items-center justify-center overflow-hidden relative`}>
               {novel.cover_image_url ? (
-                <img
+                <Image
                   src={novel.cover_image_url}
                   alt={novel.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 64px, 25vw"
                 />
               ) : (
                 <div className="text-center p-4">
