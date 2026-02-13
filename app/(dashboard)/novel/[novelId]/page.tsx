@@ -44,6 +44,13 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           Library
         </Link>
+        {novel.cover_image_url && (
+          <div className="relative w-full aspect-[3/1] rounded-xl overflow-hidden border border-ink-border/30 mb-4 mt-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={novel.cover_image_url} alt={novel.title} className="w-full h-full object-cover opacity-60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink-bg via-ink-bg/60 to-transparent" />
+          </div>
+        )}
         <h1 className="font-display text-2xl md:text-4xl text-text-primary mt-2">{novel.title}</h1>
         <p className="text-text-secondary mt-1.5 flex items-center gap-2 flex-wrap text-sm">
           <span className="px-2 py-0.5 rounded-full bg-ink-highlight text-accent-primary text-xs">{novel.genre}</span>
@@ -73,6 +80,18 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
           <Button variant="outline">
             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             Stats
+          </Button>
+        </Link>
+        <Link href={`/novel/${novelId}/quotes`}>
+          <Button variant="outline">
+            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+            Quotes
+          </Button>
+        </Link>
+        <Link href={`/novel/${novelId}/characters`}>
+          <Button variant="outline">
+            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            Characters
           </Button>
         </Link>
       </div>

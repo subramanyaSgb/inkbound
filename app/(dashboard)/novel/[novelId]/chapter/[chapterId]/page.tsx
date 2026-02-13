@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChapterReader } from '@/components/novel/ChapterReader'
+import { ChapterPageClient } from '@/components/novel/ChapterPageClient'
 import { Button } from '@/components/ui/Button'
-import type { Chapter } from '@/types'
+import type { Chapter, AlternateChapter } from '@/types'
 
 export default async function ChapterPage({
   params,
@@ -43,6 +43,19 @@ export default async function ChapterPage({
     }
   } catch {
     // Reading progress update failed — silently continue
+  }
+
+  // Fetch alternate universe versions
+  let alternates: AlternateChapter[] = []
+  try {
+    const { data } = await supabase
+      .from('alternate_chapters')
+      .select('*')
+      .eq('chapter_id', chapterId)
+      .order('created_at', { ascending: true })
+    alternates = data || []
+  } catch {
+    // Non-critical
   }
 
   let prevChapter: { id: string } | null = null
@@ -85,7 +98,7 @@ export default async function ChapterPage({
         All Chapters
       </Link>
 
-      <ChapterReader chapter={chapter} novelId={novelId} />
+      <ChapterPageClient chapter={chapter} novelId={novelId} alternates={alternates} />
 
       <div className="flex justify-between mt-8 md:mt-12">
         {prevChapter ? (

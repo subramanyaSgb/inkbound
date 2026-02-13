@@ -1,9 +1,29 @@
+'use client'
+
+import { useState, useCallback } from 'react'
 import { Hash, Calendar, BookOpen } from 'lucide-react'
 import type { Chapter } from '@/types'
 import { ChapterActions } from './ChapterActions'
+import { SaveQuoteButton } from './SaveQuoteButton'
 
 export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId: string }) {
   const paragraphs = chapter.content.split('\n').filter(p => p.trim())
+  const [selectedText, setSelectedText] = useState('')
+  const [selectionPos, setSelectionPos] = useState<{ top: number; left: number } | null>(null)
+
+  const handleTextSelect = useCallback(() => {
+    const selection = window.getSelection()
+    const text = selection?.toString().trim()
+    if (text && text.length > 10 && text.length < 500) {
+      const range = selection!.getRangeAt(0)
+      const rect = range.getBoundingClientRect()
+      setSelectedText(text)
+      setSelectionPos({ top: rect.top + window.scrollY - 40, left: rect.left + rect.width / 2 })
+    } else {
+      setSelectedText('')
+      setSelectionPos(null)
+    }
+  }, [])
 
   return (
     <article className="max-w-2xl mx-auto">
@@ -38,13 +58,27 @@ export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId:
         <div className="w-8 border-t border-ink-border/50" />
       </div>
 
-      <div className="prose-reading space-y-5 md:space-y-7">
+      <div className="prose-reading space-y-5 md:space-y-7" onMouseUp={handleTextSelect}>
         {paragraphs.map((paragraph, i) => (
           <p key={i} className="font-body text-base md:text-lg text-text-primary/90 leading-[1.8] md:leading-[1.9] tracking-normal md:tracking-wide first-letter:text-2xl first-letter:font-display first-letter:text-accent-primary/80 first-letter:mr-0.5">
             {paragraph}
           </p>
         ))}
       </div>
+
+      {selectedText && selectionPos && (
+        <div
+          className="fixed z-50"
+          style={{ top: `${selectionPos.top}px`, left: `${selectionPos.left}px`, transform: 'translateX(-50%)' }}
+        >
+          <SaveQuoteButton
+            text={selectedText}
+            chapterId={chapter.id}
+            novelId={novelId}
+            onSaved={() => { setSelectedText(''); setSelectionPos(null) }}
+          />
+        </div>
+      )}
 
       <footer className="mt-10 md:mt-16 pt-6 md:pt-8 border-t border-ink-border/50">
         <div className="flex flex-wrap items-center gap-2">

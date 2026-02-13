@@ -24,6 +24,8 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false)
+  const [coverUrl, setCoverUrl] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -41,6 +43,7 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
         setGenre(data.genre as Genre)
         setPov(data.pov as POV)
         setWritingStyle(data.writing_style as WritingStyle)
+        setCoverUrl(data.cover_image_url)
       }
     }
     load()
@@ -160,12 +163,49 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
           </Card>
         </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card variant="glass">
+            <h2 className="font-display text-lg text-text-primary mb-4">Book Cover</h2>
+            {coverUrl && (
+              <div className="relative aspect-square w-32 rounded-lg overflow-hidden border border-ink-border/50 mb-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverUrl} alt="Cover" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <p className="text-xs text-text-muted mb-3">
+              AI generates a cover based on your novel&apos;s genre, moods, and themes.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              isLoading={isGeneratingCover}
+              onClick={async () => {
+                setIsGeneratingCover(true)
+                try {
+                  const res = await fetch('/api/generate-cover', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ novelId: params.novelId }),
+                  })
+                  if (res.ok) {
+                    const { coverUrl: url } = await res.json()
+                    setCoverUrl(url)
+                  }
+                } catch {}
+                setIsGeneratingCover(false)
+              }}
+            >
+              {coverUrl ? 'Regenerate Cover' : 'Generate Cover'}
+            </Button>
+          </Card>
+        </motion.div>
+
         <div className="flex gap-3">
           <Button onClick={handleSave} isLoading={isSaving} variant="glow" className="flex-1">Save Changes</Button>
         </div>
 
         {/* Danger Zone */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <Card className="border-status-error/20 bg-status-error/5">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
