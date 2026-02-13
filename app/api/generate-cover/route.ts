@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { buildCoverImagePrompt } from '@/lib/ai/cover-prompts'
 import { checkRateLimit } from '@/lib/rate-limit'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -79,14 +81,28 @@ export async function POST(request: NextRequest) {
     if (!imageResponse.ok) {
       const err = await imageResponse.text()
       console.error(`NVIDIA Image API error (${imageResponse.status}):`, err)
-      return NextResponse.json({ error: 'Image generation failed. Please try again.' }, { status: 502 })
+      if (imageResponse.status === 401 || imageResponse.status === 403) {
+        return NextResponse.json({ error: 'NVIDIA API key does not have access to image generation. Check your API key permissions at build.nvidia.com.' }, { status: 502 })
+      }
+      if (imageResponse.status === 402 || imageResponse.status === 429) {
+        return NextResponse.json({ error: 'NVIDIA API credits exhausted or rate limited. Please try again later.' }, { status: 502 })
+      }
+      return NextResponse.json({ error: `Image generation failed (${imageResponse.status}). Please try again.` }, { status: 502 })
     }
 
-    const imageData = await imageResponse.json()
+    let imageData
+    try {
+      imageData = await imageResponse.json()
+    } catch {
+      console.error('Failed to parse NVIDIA image response')
+      return NextResponse.json({ error: 'Invalid response from image API.' }, { status: 502 })
+    }
+
     const base64Image = imageData.artifacts?.[0]?.base64
 
     if (!base64Image) {
-      return NextResponse.json({ error: 'No image generated' }, { status: 502 })
+      console.error('No artifacts in NVIDIA response:', JSON.stringify(imageData).slice(0, 500))
+      return NextResponse.json({ error: 'No image was generated. The model may be temporarily unavailable.' }, { status: 502 })
     }
 
     const buffer = Buffer.from(base64Image, 'base64')
@@ -98,7 +114,10 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to save cover image' }, { status: 500 })
+      const hint = uploadError.message?.includes('not found')
+        ? ' Make sure the "covers" storage bucket exists in your Supabase project.'
+        : ''
+      return NextResponse.json({ error: `Failed to save cover image.${hint}` }, { status: 500 })
     }
 
     const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)

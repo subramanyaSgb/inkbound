@@ -26,6 +26,7 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
   const [isDeleting, setIsDeleting] = useState(false)
   const [isGeneratingCover, setIsGeneratingCover] = useState(false)
   const [coverUrl, setCoverUrl] = useState<string | null>(null)
+  const [coverError, setCoverError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -175,23 +176,31 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
             <p className="text-xs text-text-muted mb-3">
               AI generates a cover based on your novel&apos;s genre, moods, and themes.
             </p>
+            {coverError && (
+              <p className="text-xs text-status-error mb-3">{coverError}</p>
+            )}
             <Button
               size="sm"
               variant="outline"
               isLoading={isGeneratingCover}
               onClick={async () => {
                 setIsGeneratingCover(true)
+                setCoverError(null)
                 try {
                   const res = await fetch('/api/generate-cover', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ novelId: params.novelId }),
                   })
+                  const data = await res.json()
                   if (res.ok) {
-                    const { coverUrl: url } = await res.json()
-                    setCoverUrl(url)
+                    setCoverUrl(data.coverUrl)
+                  } else {
+                    setCoverError(data.error || 'Cover generation failed')
                   }
-                } catch {}
+                } catch {
+                  setCoverError('Network error — please check your connection and try again.')
+                }
                 setIsGeneratingCover(false)
               }}
             >
