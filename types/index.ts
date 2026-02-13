@@ -93,6 +93,10 @@ export interface StoryProfile {
   relationship: string | null
   nickname: string | null
   details: Record<string, string>
+  archetype: string | null
+  portrait_url: string | null
+  first_chapter_id: string | null
+  mention_count: number
   created_at: string
   updated_at: string
 }
@@ -104,6 +108,29 @@ export interface ReadingProgress {
   last_chapter_id: string | null
   chapters_read: number
   updated_at: string
+}
+
+export interface SavedQuote {
+  id: string
+  user_id: string
+  chapter_id: string
+  novel_id: string
+  text: string
+  created_at: string
+}
+
+export type AlternateGenre = 'medieval' | 'space-opera' | 'noir' | 'cyberpunk' | 'romcom' | 'horror' | 'superhero'
+
+export interface AlternateChapter {
+  id: string
+  chapter_id: string
+  genre: AlternateGenre
+  title: string | null
+  content: string
+  opening_quote: string | null
+  mood: string | null
+  word_count: number
+  created_at: string
 }
 
 export interface NovelWithChapterCount extends Novel {
