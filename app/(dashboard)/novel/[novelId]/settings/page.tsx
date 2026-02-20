@@ -187,19 +187,61 @@ export default function NovelSettingsPage({ params }: { params: { novelId: strin
                 setIsGeneratingCover(true)
                 setCoverError(null)
                 try {
+                  // 1. Get AI-built prompt from server
                   const res = await fetch('/api/generate-cover', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ novelId: params.novelId }),
                   })
                   const data = await res.json()
-                  if (res.ok) {
-                    setCoverUrl(data.coverUrl)
-                  } else {
-                    setCoverError(data.error || 'Cover generation failed')
+                  if (!res.ok) {
+                    setCoverError(data.error || 'Failed to build cover prompt')
+                    setIsGeneratingCover(false)
+                    return
                   }
-                } catch {
-                  setCoverError('Network error — please check your connection and try again.')
+
+                  // 2. Generate image client-side via Puter.js (free, no API key)
+                  if (typeof puter === 'undefined') {
+                    setCoverError('Image service not loaded. Please refresh and try again.')
+                    setIsGeneratingCover(false)
+                    return
+                  }
+                  const imgEl = await puter.ai.txt2img(data.prompt, {
+                    model: 'stabilityai/stable-diffusion-xl-base-1.0',
+                    width: 1024,
+                    height: 1024,
+                  })
+
+                  // 3. Convert image element to blob
+                  const canvas = document.createElement('canvas')
+                  canvas.width = imgEl.naturalWidth || 1024
+                  canvas.height = imgEl.naturalHeight || 1024
+                  const ctx = canvas.getContext('2d')!
+                  ctx.drawImage(imgEl, 0, 0)
+                  const blob = await new Promise<Blob>((resolve) =>
+                    canvas.toBlob((b) => resolve(b!), 'image/png')
+                  )
+
+                  // 4. Upload to Supabase storage
+                  const fileName = `covers/${data.userId}/${params.novelId}/${Date.now()}.png`
+                  const { error: uploadError } = await supabase.storage
+                    .from('covers')
+                    .upload(fileName, blob, { contentType: 'image/png', upsert: true })
+                  if (uploadError) {
+                    setCoverError(`Upload failed: ${uploadError.message}`)
+                    setIsGeneratingCover(false)
+                    return
+                  }
+
+                  // 5. Get public URL and update novel
+                  const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
+                  await supabase
+                    .from('novels')
+                    .update({ cover_image_url: publicUrl, updated_at: new Date().toISOString() })
+                    .eq('id', params.novelId)
+                  setCoverUrl(publicUrl)
+                } catch (err) {
+                  setCoverError(err instanceof Error ? err.message : 'Cover generation failed. Please try again.')
                 }
                 setIsGeneratingCover(false)
               }}

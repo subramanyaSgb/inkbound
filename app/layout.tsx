@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from 'next/script'
 import { Playfair_Display, Crimson_Pro, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import "./globals.css";
 
@@ -74,6 +75,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${crimson.variable} ${dmSans.variable} ${jetbrains.variable}`}>
       <body className="min-h-screen bg-ink-bg text-text-primary font-ui antialiased">
+        <Script src="https://js.puter.com/v2/" strategy="beforeInteractive" />
         {children}
       </body>
     </html>
