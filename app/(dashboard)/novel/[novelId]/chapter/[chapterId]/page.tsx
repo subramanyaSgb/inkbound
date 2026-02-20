@@ -28,6 +28,12 @@ export default async function ChapterPage({
 
   if (!chapter) notFound()
 
+  // If chapter is still generating or failed, redirect to novel page
+  if (chapter.status !== 'completed') {
+    const { redirect } = await import('next/navigation')
+    redirect(`/novel/${novelId}`)
+  }
+
   // Auto-track reading progress (non-critical, silently continue on failure)
   try {
     const { data: { user } } = await supabase.auth.getUser()

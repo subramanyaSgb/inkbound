@@ -173,7 +173,7 @@ export default function ChapterSearchPage() {
                     </p>
                     {query && (
                       <p className="text-xs text-text-secondary mt-1 line-clamp-2">
-                        {chapter.content.substring(0, 150)}...
+                        {(chapter.content || '').substring(0, 150)}...
                       </p>
                     )}
                   </div>

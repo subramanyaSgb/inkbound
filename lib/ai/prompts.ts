@@ -164,7 +164,7 @@ export function buildChapterPrompt(
 ): { system: string; user: string } {
   const recentContext = recentChapters.length > 0
     ? recentChapters.map(ch =>
-        `Chapter ${ch.chapter_number} "${ch.title}": mood=${ch.mood}, summary: ${ch.content.slice(0, 200)}...`
+        `Chapter ${ch.chapter_number} "${ch.title}": mood=${ch.mood}, summary: ${(ch.content || '').slice(0, 200)}...`
       ).join('\n')
     : 'No previous chapters yet. This is the beginning of the story.'
 

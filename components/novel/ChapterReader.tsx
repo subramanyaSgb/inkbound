@@ -7,7 +7,7 @@ import { ChapterActions } from './ChapterActions'
 import { SaveQuoteButton } from './SaveQuoteButton'
 
 export function ChapterReader({ chapter, novelId }: { chapter: Chapter; novelId: string }) {
-  const paragraphs = chapter.content.split('\n').filter(p => p.trim())
+  const paragraphs = (chapter.content || '').split('\n').filter(p => p.trim())
   const [selectedText, setSelectedText] = useState('')
   const [selectionPos, setSelectionPos] = useState<{ top: number; left: number } | null>(null)
 
