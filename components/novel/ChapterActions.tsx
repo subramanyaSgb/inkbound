@@ -29,11 +29,9 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
     setIsQuickEditing(true)
     setQuickEditError('')
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 120000)
-
     try {
-      const response = await fetch('/api/generate-chapter', {
+      // Step 1: Start generation (fast — creates/updates chapter row with 'generating' status)
+      const startResponse = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -41,15 +39,12 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
           chapterId,
           editInstruction: quickEditInstruction,
         }),
-        signal: controller.signal,
       })
 
-      clearTimeout(timeout)
-
-      if (!response.ok) {
-        let message = 'Failed to regenerate'
+      if (!startResponse.ok) {
+        let message = 'Failed to start regeneration'
         try {
-          const err = await response.json()
+          const err = await startResponse.json()
           message = err.error || message
         } catch {
           // Response body wasn't JSON
@@ -57,18 +52,22 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
         throw new Error(message)
       }
 
-      const { chapterId: resultId } = await response.json()
+      const data = await startResponse.json()
+
+      // Step 2: Fire background AI processing (fire-and-forget)
+      fetch('/api/process-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chapterId: data.chapterId, editInstruction: quickEditInstruction }),
+        keepalive: true,
+      }).catch(() => {})
+
+      // Step 3: Redirect to novel page (polling will show generating status)
       setShowEditModal(false)
       setQuickEditInstruction('')
-      router.push(`/novel/${novelId}/chapter/${resultId}`)
-      router.refresh()
+      router.push(`/novel/${novelId}`)
     } catch (err: unknown) {
-      clearTimeout(timeout)
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        setQuickEditError('Taking too long. Please check your novel — it may still be processing.')
-      } else {
-        setQuickEditError(err instanceof Error ? err.message : 'Something went wrong')
-      }
+      setQuickEditError(err instanceof Error ? err.message : 'Something went wrong')
       setIsQuickEditing(false)
     }
   }
