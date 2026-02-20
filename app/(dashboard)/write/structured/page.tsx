@@ -15,14 +15,14 @@ import { ProfileQuestionModal, type ProfileAnswer } from '@/components/write/Pro
 import type { StoryProfile } from '@/types'
 
 const PROMPTS = [
-  { id: 'highlight', label: 'Highlight', question: 'What was the best part of your day?' },
-  { id: 'people', label: 'People', question: 'Who did you spend time with today?' },
-  { id: 'feeling', label: 'Feeling', question: 'How are you feeling right now?' },
-  { id: 'surprise', label: 'Surprise', question: 'Did anything unexpected happen?' },
-  { id: 'challenge', label: 'Challenge', question: 'What was difficult or frustrating today?' },
-  { id: 'gratitude', label: 'Gratitude', question: 'What are you grateful for today?' },
-  { id: 'detail', label: 'Detail', question: 'Describe one moment in vivid detail — sights, sounds, feelings.' },
-  { id: 'thought', label: 'On your mind', question: "What's been on your mind lately?" },
+  { id: 'morning', label: 'Morning', emoji: '\u{1F305}', question: 'How did you wake up? First thoughts?' },
+  { id: 'events', label: 'Events', emoji: '\u{1F4CB}', question: 'What happened today? Key moments?' },
+  { id: 'conversations', label: 'Conversations', emoji: '\u{1F4AC}', question: 'Notable things people said, your responses?' },
+  { id: 'thoughts', label: 'Thoughts', emoji: '\u{1F9E0}', question: 'What was on your mind?' },
+  { id: 'feelings', label: 'Feelings', emoji: '\u{2764}\u{FE0F}', question: 'Emotional state throughout the day?' },
+  { id: 'highlight', label: 'Highlight', emoji: '\u{2B50}', question: 'Best moment of the day?' },
+  { id: 'lowpoint', label: 'Low Point', emoji: '\u{1F614}', question: 'Worst or hardest moment? (optional)' },
+  { id: 'tomorrow', label: 'Tomorrow', emoji: '\u{1F52E}', question: 'What are you looking forward to or dreading?' },
 ]
 
 export default function StructuredWritePage() {
@@ -32,7 +32,7 @@ export default function StructuredWritePage() {
   const { entryDate, setEntryDate, setSelectedNovelId, setRawEntry, isGenerating, setIsGenerating, reset, initDate } = useWriteStore()
   const [error, setError] = useState('')
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(['highlight', 'people', 'feeling']))
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(['morning', 'events', 'feelings']))
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
 
@@ -195,8 +195,9 @@ export default function StructuredWritePage() {
                     className="w-full flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${hasAnswer ? 'bg-accent-primary' : 'bg-ink-border'}`} />
+                      <span className="flex-shrink-0 text-base">{prompt.emoji}</span>
                       <span className="font-ui text-sm text-text-primary truncate">{prompt.question}</span>
+                      {hasAnswer && <div className="w-1.5 h-1.5 rounded-full bg-accent-primary flex-shrink-0" />}
                     </div>
                     {isOpen ? (
                       <ChevronUp className="w-4 h-4 text-text-muted flex-shrink-0" />
