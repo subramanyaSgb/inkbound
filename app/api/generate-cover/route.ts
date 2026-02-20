@@ -58,34 +58,37 @@ export async function POST(request: NextRequest) {
 
     const imagePrompt = buildCoverImagePrompt(novel, topMoods, topTags)
 
-    const imageResponse = await fetch('https://ai.api.nvidia.com/v1/genai/stabilityai/stable-diffusion-xl', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        text_prompts: [
-          { text: imagePrompt, weight: 1 },
-          { text: 'text, letters, words, watermark, ugly, blurry, deformed', weight: -1 },
-        ],
-        cfg_scale: 7,
-        height: 1024,
-        width: 1024,
-        steps: 30,
-        samples: 1,
-      }),
-    })
+    const geminiApiKey = process.env.GEMINI_API_KEY
+    if (!geminiApiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY not configured.' }, { status: 500 })
+    }
+
+    const imageResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: imagePrompt }] }],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            imageConfig: {
+              aspectRatio: '1:1',
+              imageSize: '1K',
+            },
+          },
+        }),
+      }
+    )
 
     if (!imageResponse.ok) {
       const err = await imageResponse.text()
-      console.error(`NVIDIA Image API error (${imageResponse.status}):`, err)
+      console.error(`Gemini Image API error (${imageResponse.status}):`, err)
       if (imageResponse.status === 401 || imageResponse.status === 403) {
-        return NextResponse.json({ error: 'NVIDIA API key does not have access to image generation. Check your API key permissions at build.nvidia.com.' }, { status: 502 })
+        return NextResponse.json({ error: 'Gemini API key is invalid or lacks permissions.' }, { status: 502 })
       }
-      if (imageResponse.status === 402 || imageResponse.status === 429) {
-        return NextResponse.json({ error: 'NVIDIA API credits exhausted or rate limited. Please try again later.' }, { status: 502 })
+      if (imageResponse.status === 429) {
+        return NextResponse.json({ error: 'Gemini API rate limited. Please try again later.' }, { status: 502 })
       }
       return NextResponse.json({ error: `Image generation failed (${imageResponse.status}). Please try again.` }, { status: 502 })
     }
@@ -94,14 +97,17 @@ export async function POST(request: NextRequest) {
     try {
       imageData = await imageResponse.json()
     } catch {
-      console.error('Failed to parse NVIDIA image response')
+      console.error('Failed to parse Gemini image response')
       return NextResponse.json({ error: 'Invalid response from image API.' }, { status: 502 })
     }
 
-    const base64Image = imageData.artifacts?.[0]?.base64
+    // Extract base64 image from Gemini response parts
+    const parts = imageData.candidates?.[0]?.content?.parts || []
+    const imagePart = parts.find((p: { inline_data?: { mime_type: string; data: string } }) => p.inline_data?.data)
+    const base64Image = imagePart?.inline_data?.data
 
     if (!base64Image) {
-      console.error('No artifacts in NVIDIA response:', JSON.stringify(imageData).slice(0, 500))
+      console.error('No image in Gemini response:', JSON.stringify(imageData).slice(0, 500))
       return NextResponse.json({ error: 'No image was generated. The model may be temporarily unavailable.' }, { status: 502 })
     }
 
