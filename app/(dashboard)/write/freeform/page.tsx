@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card'
 import { createClient } from '@/lib/supabase/client'
 import { scanForUnknownReferences, type UnknownReference } from '@/lib/profile-scanner'
 import { ProfileQuestionModal, type ProfileAnswer } from '@/components/write/ProfileQuestionModal'
+import { Toast } from '@/components/ui/Toast'
 import { entrySchema } from '@/lib/validations'
 import type { StoryProfile } from '@/types'
 
@@ -27,6 +28,8 @@ export default function FreeformWritePage() {
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
   const isEditing = !!chapterId
 
   useEffect(() => {
@@ -64,11 +67,9 @@ export default function FreeformWritePage() {
     setIsGenerating(true)
     setError('')
 
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 120000)
-
     try {
-      const response = await fetch('/api/generate-chapter', {
+      // Step 1: Create chapter row with 'generating' status (fast)
+      const startResponse = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,32 +78,88 @@ export default function FreeformWritePage() {
           entryDate,
           ...(isEditing && { chapterId }),
         }),
-        signal: controller.signal,
       })
 
-      clearTimeout(timeout)
-
-      if (!response.ok) {
-        let message = 'Failed to generate chapter'
+      if (!startResponse.ok) {
+        let message = 'Failed to start chapter generation'
         try {
-          const err = await response.json()
+          const err = await startResponse.json()
           message = err.error || message
         } catch {
-          // Response body wasn't JSON (e.g. 504 timeout page)
+          // Response wasn't JSON
         }
         throw new Error(message)
       }
 
-      const { chapterId: resultChapterId } = await response.json()
-      reset()
-      router.push(`/novel/${novelId}/chapter/${resultChapterId}`)
-    } catch (err: unknown) {
-      clearTimeout(timeout)
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        setError('Generation is taking too long. Please check your novel — your chapter may still be processing.')
-      } else {
-        setError(err instanceof Error ? err.message : 'Something went wrong')
+      const { chapterId: generatingChapterId } = await startResponse.json()
+
+      // Step 2: Fire background AI generation (fire-and-forget)
+      fetch('/api/process-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapterId: generatingChapterId,
+        }),
+        keepalive: true,
+      }).catch(() => {
+        // Fire-and-forget: errors handled by status polling
+      })
+
+      // Step 3: Poll for completion (every 5s, up to 30s)
+      const POLL_INTERVAL = 5000
+      const MAX_WAIT = 30000
+      const startTime = Date.now()
+
+      const pollForCompletion = (): Promise<string | null> => {
+        return new Promise((resolve) => {
+          const interval = setInterval(async () => {
+            const elapsed = Date.now() - startTime
+            if (elapsed >= MAX_WAIT) {
+              clearInterval(interval)
+              resolve(null) // Timed out
+              return
+            }
+
+            try {
+              const statusRes = await fetch(`/api/chapter-status?id=${generatingChapterId}`)
+              if (statusRes.ok) {
+                const data = await statusRes.json()
+                if (data.status === 'completed') {
+                  clearInterval(interval)
+                  resolve('completed')
+                } else if (data.status === 'failed') {
+                  clearInterval(interval)
+                  resolve('failed')
+                }
+              }
+            } catch {
+              // Polling error, keep trying
+            }
+          }, POLL_INTERVAL)
+        })
       }
+
+      const result = await pollForCompletion()
+
+      if (result === 'completed') {
+        // AI finished in time — redirect to reader
+        reset()
+        router.push(`/novel/${novelId}/chapter/${generatingChapterId}`)
+      } else if (result === 'failed') {
+        // AI failed — show error
+        setError('Chapter generation failed. You can retry from the novel page.')
+        setIsGenerating(false)
+      } else {
+        // Timed out (30s) — redirect to novel page with toast
+        reset()
+        setToastMessage('Your chapter is being crafted in the background. Check back shortly!')
+        setShowToast(true)
+        setTimeout(() => {
+          router.push(`/novel/${novelId}`)
+        }, 2000)
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsGenerating(false)
     }
   }
@@ -223,6 +280,14 @@ export default function FreeformWritePage() {
           onClose={() => setShowProfileModal(false)}
         />
       )}
+
+      <Toast
+        message={toastMessage}
+        type="info"
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        duration={5000}
+      />
     </div>
   )
 }
