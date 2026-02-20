@@ -1,4 +1,5 @@
-import type { Novel, StoryProfile } from '@/types'
+import type { Novel, StoryProfile, ProfileRelationship } from '@/types'
+import { buildRelationshipContext } from '@/lib/ai/prompts'
 
 export const AU_GENRES = [
   { value: 'medieval', label: 'Medieval Fantasy', icon: '🏰', description: 'Knights, castles, and ancient magic' },
@@ -25,15 +26,21 @@ export function buildAlternatePrompt(
   novel: Novel,
   rawEntry: string,
   entryDate: string,
-  storyProfiles: StoryProfile[] = []
+  storyProfiles: StoryProfile[] = [],
+  relationships?: ProfileRelationship[]
 ): { system: string; user: string } {
   const genreInstruction = GENRE_PROMPTS[genre] || GENRE_PROMPTS.medieval
 
   let profileContext = ''
-  const characters = storyProfiles.filter(p => p.type === 'character')
-  const locations = storyProfiles.filter(p => p.type === 'location')
 
-  if (storyProfiles.length > 0) {
+  if (relationships && relationships.length > 0 && storyProfiles.length > 0) {
+    // Use structured relationship context
+    profileContext = '\n' + buildRelationshipContext(storyProfiles, relationships)
+  } else if (storyProfiles.length > 0) {
+    // Fallback: flat profile list (backward compatible)
+    const characters = storyProfiles.filter(p => p.type === 'character')
+    const locations = storyProfiles.filter(p => p.type === 'location')
+
     profileContext = '\nCHARACTER REFERENCE (use these names, never invent new ones):\n'
     characters.forEach(p => {
       profileContext += `- ${p.name}${p.relationship ? ` (${p.relationship})` : ''}${p.nickname ? ` aka "${p.nickname}"` : ''}\n`

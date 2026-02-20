@@ -117,6 +117,12 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('user_id', user.id)
 
+    // Fetch user's profile relationships
+    const { data: relationships } = await supabase
+      .from('profile_relationships')
+      .select('*')
+      .eq('user_id', user.id)
+
     // Build prompt and generate
     const { system, user: userPrompt } = buildChapterPrompt(
       novel,
@@ -127,7 +133,8 @@ export async function POST(request: NextRequest) {
       entryYear,
       recentChapters || [],
       storyProfiles || [],
-      isQuickEdit ? editInstruction : undefined
+      isQuickEdit ? editInstruction : undefined,
+      relationships || []
     )
 
     let result

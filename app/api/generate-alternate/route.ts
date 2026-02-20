@@ -38,9 +38,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
     }
 
-    const [novelResult, profilesResult] = await Promise.all([
+    const [novelResult, profilesResult, relationshipsResult] = await Promise.all([
       supabase.from('novels').select('*').eq('id', chapter.novel_id).single(),
       supabase.from('story_profiles').select('*').eq('user_id', user.id),
+      supabase.from('profile_relationships').select('*').eq('user_id', user.id),
     ])
 
     if (!novelResult.data) {
@@ -48,7 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { system, user: userPrompt } = buildAlternatePrompt(
-      genre, novelResult.data, chapter.raw_entry, chapter.entry_date, profilesResult.data || []
+      genre, novelResult.data, chapter.raw_entry, chapter.entry_date,
+      profilesResult.data || [], relationshipsResult.data || []
     )
 
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {

@@ -1,4 +1,154 @@
-import type { Novel, Chapter, StoryProfile } from '@/types'
+import type { Novel, Chapter, StoryProfile, ProfileRelationship } from '@/types'
+import { RELATIONSHIP_INVERSE_MAP, FAMILY_CATEGORIES } from '@/lib/constants'
+
+function formatProfileDetails(details: Record<string, string> | null | undefined): string {
+  if (!details) return ''
+  const entries = Object.entries(details).filter(([, v]) => v)
+  if (entries.length === 0) return ''
+  return entries.map(([k, v]) => `${k}: ${v}`).join(', ')
+}
+
+export function buildRelationshipContext(
+  profiles: StoryProfile[],
+  relationships: ProfileRelationship[]
+): string {
+  const profileMap = new Map<string, StoryProfile>()
+  profiles.forEach(p => profileMap.set(p.id, p))
+
+  const protagonist = profiles.find(p => p.type === 'personal')
+  const locations = profiles.filter(p => p.type === 'location')
+
+  // Build adjacency map (both directions)
+  type Edge = { targetId: string; type: string }
+  const adjacency = new Map<string, Edge[]>()
+
+  const addEdge = (from: string, to: string, type: string) => {
+    if (!adjacency.has(from)) adjacency.set(from, [])
+    adjacency.get(from)!.push({ targetId: to, type })
+  }
+
+  for (const rel of relationships) {
+    addEdge(rel.from_profile_id, rel.to_profile_id, rel.relationship_type)
+    const inverse = RELATIONSHIP_INVERSE_MAP[rel.relationship_type] || rel.relationship_type
+    addEdge(rel.to_profile_id, rel.from_profile_id, inverse)
+  }
+
+  // Track which profiles have been mentioned
+  const mentionedIds = new Set<string>()
+
+  let context = ''
+
+  // --- Family Tree Section ---
+  if (protagonist) {
+    mentionedIds.add(protagonist.id)
+    const protagonistEdges = adjacency.get(protagonist.id) || []
+
+    const familyCategories = new Set<string>([...FAMILY_CATEGORIES, 'child'])
+    const familyEdges = protagonistEdges.filter(e => familyCategories.has(e.type))
+    const socialEdges = protagonistEdges.filter(e => !familyCategories.has(e.type))
+
+    if (familyEdges.length > 0) {
+      context += '\nFamily Tree:\n'
+
+      // Group by relationship type
+      const parents = familyEdges.filter(e => e.type === 'parent')
+      const spouse = familyEdges.filter(e => e.type === 'spouse')
+      const siblings = familyEdges.filter(e => e.type === 'sibling')
+      const children = familyEdges.filter(e => e.type === 'child')
+
+      for (const edge of parents) {
+        const p = profileMap.get(edge.targetId)
+        if (!p) continue
+        mentionedIds.add(p.id)
+        const dets = formatProfileDetails(p.details)
+        context += `- ${p.name} (your ${edge.type}${dets ? `, ${dets}` : ''})\n`
+
+        // Find this parent's connections (grandparents, aunts/uncles for protagonist)
+        const parentEdges = adjacency.get(p.id) || []
+        for (const pe of parentEdges) {
+          // Skip edge back to protagonist
+          if (pe.targetId === protagonist.id) continue
+          const pp = profileMap.get(pe.targetId)
+          if (!pp) continue
+          // Skip if already mentioned as a direct family member
+          if (mentionedIds.has(pp.id)) continue
+          mentionedIds.add(pp.id)
+          const ppDets = formatProfileDetails(pp.details)
+          context += `  - ${pe.type}: ${pp.name}${ppDets ? ` (${ppDets})` : ''}\n`
+        }
+      }
+
+      for (const edge of spouse) {
+        const p = profileMap.get(edge.targetId)
+        if (!p) continue
+        mentionedIds.add(p.id)
+        const dets = formatProfileDetails(p.details)
+        context += `- ${p.name} (your ${edge.type}${dets ? `, ${dets}` : ''})\n`
+      }
+
+      for (const edge of siblings) {
+        const p = profileMap.get(edge.targetId)
+        if (!p) continue
+        mentionedIds.add(p.id)
+        const dets = formatProfileDetails(p.details)
+        context += `- ${p.name} (your ${edge.type}${dets ? `, ${dets}` : ''})\n`
+      }
+
+      for (const edge of children) {
+        const p = profileMap.get(edge.targetId)
+        if (!p) continue
+        mentionedIds.add(p.id)
+        const dets = formatProfileDetails(p.details)
+        context += `- ${p.name} (your ${edge.type}${dets ? `, ${dets}` : ''})\n`
+      }
+    }
+
+    // --- Social Circle Section ---
+    if (socialEdges.length > 0) {
+      context += '\nSocial Circle:\n'
+      for (const edge of socialEdges) {
+        const p = profileMap.get(edge.targetId)
+        if (!p) continue
+        mentionedIds.add(p.id)
+        const dets = formatProfileDetails(p.details)
+        const label = p.nickname ? `, "${p.nickname}"` : ''
+        context += `- ${p.name} (${edge.type}${label}${dets ? `, ${dets}` : ''})\n`
+      }
+    }
+  }
+
+  // --- Unconnected profiles (backward compat) ---
+  const unconnected = profiles.filter(
+    p => p.type === 'character' && !mentionedIds.has(p.id)
+  )
+  if (unconnected.length > 0) {
+    context += '\nOther People:\n'
+    for (const p of unconnected) {
+      const dets = formatProfileDetails(p.details)
+      const rel = p.relationship ? ` (${p.relationship})` : ''
+      context += `- ${p.name}${rel}${dets ? `: ${dets}` : ''}\n`
+    }
+  }
+
+  // --- Locations ---
+  if (locations.length > 0) {
+    context += '\nLocations:\n'
+    for (const p of locations) {
+      const dets = formatProfileDetails(p.details)
+      context += `- ${p.name}${dets ? `: ${dets}` : ''}\n`
+    }
+  }
+
+  // --- Relationship rules ---
+  context += `
+RELATIONSHIP RULES:
+- Use the relationship graph above to understand how characters relate to EACH OTHER
+- When the protagonist mentions "mom and aunt arguing", understand they are siblings
+- Refer to characters by their names or the protagonist's natural way of addressing them
+- NEVER invent relationships not listed above`
+
+  return context
+}
 
 export function buildChapterPrompt(
   novel: Novel,
@@ -9,7 +159,8 @@ export function buildChapterPrompt(
   year: number,
   recentChapters: Pick<Chapter, 'title' | 'content' | 'mood' | 'chapter_number'>[],
   storyProfiles: StoryProfile[] = [],
-  editInstruction?: string
+  editInstruction?: string,
+  relationships?: ProfileRelationship[]
 ): { system: string; user: string } {
   const recentContext = recentChapters.length > 0
     ? recentChapters.map(ch =>
@@ -17,13 +168,18 @@ export function buildChapterPrompt(
       ).join('\n')
     : 'No previous chapters yet. This is the beginning of the story.'
 
-  // Build profile context
+  // Build profile context — use relationship graph when available, else flat list
   let profileContext = ''
-  const personal = storyProfiles.filter(p => p.type === 'personal')
-  const characters = storyProfiles.filter(p => p.type === 'character')
-  const locations = storyProfiles.filter(p => p.type === 'location')
 
-  if (storyProfiles.length > 0) {
+  if (relationships && relationships.length > 0 && storyProfiles.length > 0) {
+    // Use structured relationship context
+    profileContext = '\n' + buildRelationshipContext(storyProfiles, relationships)
+  } else if (storyProfiles.length > 0) {
+    // Fallback: flat profile list (backward compatible)
+    const personal = storyProfiles.filter(p => p.type === 'personal')
+    const characters = storyProfiles.filter(p => p.type === 'character')
+    const locations = storyProfiles.filter(p => p.type === 'location')
+
     profileContext = '\nCHARACTER & LOCATION REFERENCE:\n'
 
     if (personal.length > 0) {
