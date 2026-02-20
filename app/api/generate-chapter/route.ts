@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { buildChapterPrompt } from '@/lib/ai/prompts'
-import { generateChapter } from '@/lib/ai/chapter-generator'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-export const maxDuration = 120
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +40,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
     }
 
+    // --- EDIT MODE: update existing chapter to 'generating' ---
+    if (chapterId) {
+      const { data: existingChapter } = await supabase
+        .from('chapters')
+        .select('chapter_number, raw_entry, entry_date')
+        .eq('id', chapterId)
+        .single()
+
+      if (!existingChapter) {
+        return NextResponse.json({ error: 'Chapter not found' }, { status: 404 })
+      }
+
+      // Set status to generating, clear AI-generated content
+      await supabase
+        .from('chapters')
+        .update({
+          status: 'generating',
+          raw_entry: isQuickEdit ? existingChapter.raw_entry : rawEntry,
+          entry_date: isQuickEdit ? existingChapter.entry_date : entryDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', chapterId)
+
+      return NextResponse.json({ chapterId, status: 'generating' })
+    }
+
+    // --- NEW CHAPTER: insert with 'generating' status ---
+
     // Get chapter count for chapter number (exclude deleted)
     const { count: chapterCount } = await supabase
       .from('chapters')
@@ -53,27 +77,8 @@ export async function POST(request: NextRequest) {
 
     const chapterNumber = (chapterCount || 0) + 1
 
-    // If editing existing chapter, use its chapter number and fetch raw_entry for quick edit
-    let finalChapterNumber = chapterNumber
-    let finalRawEntry = rawEntry
-    let finalEntryDate = entryDate
-    if (chapterId) {
-      const { data: existingChapter } = await supabase
-        .from('chapters')
-        .select('chapter_number, raw_entry, entry_date, content')
-        .eq('id', chapterId)
-        .single()
-      if (existingChapter) {
-        finalChapterNumber = existingChapter.chapter_number
-        if (isQuickEdit) {
-          finalRawEntry = existingChapter.raw_entry
-          finalEntryDate = existingChapter.entry_date
-        }
-      }
-    }
-
     // Get or create volume for the entry year
-    const entryYear = new Date(finalEntryDate).getFullYear()
+    const entryYear = new Date(entryDate).getFullYear()
 
     let { data: volume } = await supabase
       .from('volumes')
@@ -102,117 +107,30 @@ export async function POST(request: NextRequest) {
       volume = newVolume
     }
 
-    // Fetch recent chapters for continuity (exclude deleted)
-    const { data: recentChapters } = await supabase
+    // Insert chapter row with 'generating' status (no AI content yet)
+    const { data: chapter, error: chapterError } = await supabase
       .from('chapters')
-      .select('title, content, mood, chapter_number')
-      .eq('novel_id', novelId)
-      .is('deleted_at', null)
-      .order('chapter_number', { ascending: false })
-      .limit(3)
+      .insert({
+        novel_id: novelId,
+        volume_id: volume?.id || null,
+        chapter_number: chapterNumber,
+        title: null,
+        content: null,
+        raw_entry: rawEntry,
+        entry_mode: 'freeform',
+        entry_date: entryDate,
+        status: 'generating',
+        mood: null,
+        mood_score: null,
+        tags: [],
+        opening_quote: null,
+        word_count: 0,
+      })
+      .select()
+      .single()
 
-    // Fetch user's story profiles
-    const { data: storyProfiles } = await supabase
-      .from('story_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-
-    // Fetch user's profile relationships
-    const { data: relationships } = await supabase
-      .from('profile_relationships')
-      .select('*')
-      .eq('user_id', user.id)
-
-    // Build prompt and generate
-    const { system, user: userPrompt } = buildChapterPrompt(
-      novel,
-      finalRawEntry,
-      finalEntryDate,
-      finalChapterNumber,
-      volume?.volume_number || 1,
-      entryYear,
-      recentChapters || [],
-      storyProfiles || [],
-      isQuickEdit ? editInstruction : undefined,
-      relationships || []
-    )
-
-    let result
-    try {
-      result = await generateChapter(system, userPrompt)
-    } catch (genError: unknown) {
-      console.error('AI generation failed:', genError)
-      const message = genError instanceof Error ? genError.message : 'Unknown AI error'
-      if (message.includes('API error')) {
-        return NextResponse.json(
-          { error: 'AI service is temporarily unavailable. Please try again in a moment.' },
-          { status: 502 }
-        )
-      }
-      if (message.includes('JSON')) {
-        return NextResponse.json(
-          { error: 'AI returned an invalid response. Please try again.' },
-          { status: 502 }
-        )
-      }
-      return NextResponse.json(
-        { error: 'Failed to generate chapter. Please try again.' },
-        { status: 500 }
-      )
-    }
-
-    // Save chapter
-    let savedChapter
-
-    if (chapterId) {
-      const { data: chapter, error: chapterError } = await supabase
-        .from('chapters')
-        .update({
-          title: result.title,
-          content: result.content,
-          raw_entry: finalRawEntry,
-          entry_date: finalEntryDate,
-          mood: result.mood,
-          mood_score: result.mood_score,
-          tags: result.tags,
-          opening_quote: result.opening_quote,
-          word_count: result.content.split(/\s+/).length,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', chapterId)
-        .eq('novel_id', novelId)
-        .select()
-        .single()
-
-      if (chapterError) {
-        return NextResponse.json({ error: chapterError.message }, { status: 500 })
-      }
-      savedChapter = chapter
-    } else {
-      const { data: chapter, error: chapterError } = await supabase
-        .from('chapters')
-        .insert({
-          novel_id: novelId,
-          volume_id: volume?.id || null,
-          chapter_number: finalChapterNumber,
-          title: result.title,
-          content: result.content,
-          raw_entry: rawEntry,
-          entry_mode: 'freeform',
-          entry_date: entryDate,
-          mood: result.mood,
-          mood_score: result.mood_score,
-          tags: result.tags,
-          opening_quote: result.opening_quote,
-          word_count: result.content.split(/\s+/).length,
-        })
-        .select()
-        .single()
-
-      if (chapterError) {
-        return NextResponse.json({ error: chapterError.message }, { status: 500 })
-      }
-      savedChapter = chapter
+    if (chapterError) {
+      return NextResponse.json({ error: chapterError.message }, { status: 500 })
     }
 
     // Update novel's updated_at
@@ -221,9 +139,9 @@ export async function POST(request: NextRequest) {
       .update({ updated_at: new Date().toISOString() })
       .eq('id', novelId)
 
-    return NextResponse.json({ chapterId: savedChapter.id })
+    return NextResponse.json({ chapterId: chapter.id, status: 'generating' })
   } catch (error: unknown) {
     console.error('Chapter generation error:', error)
-    return NextResponse.json({ error: 'Failed to generate chapter' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to start chapter generation' }, { status: 500 })
   }
 }
