@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { RELATIONSHIP_TYPES } from '@/lib/constants'
 import { addRelationship, updateRelationship } from '@/lib/relationships'
 import { createClient } from '@/lib/supabase/client'
-import type { StoryProfile, ProfileRelationship, RelationshipType } from '@/types'
+import type { StoryProfile, ProfileRelationship } from '@/types'
 
 interface AddRelationshipModalProps {
   isOpen: boolean

@@ -68,8 +68,6 @@ function findRelatedIds(
   wantedRole: 'parent' | 'sibling' | 'spouse' | 'child',
 ): string[] {
   const ids: string[] = []
-  const inverse = RELATIONSHIP_INVERSE_MAP[wantedRole] // e.g. parent -> child
-
   for (const rel of relationships) {
     if (rel.from_profile_id === subjectId) {
       // rel says: subject --type--> other
@@ -466,7 +464,6 @@ export function FamilyTreeView({
   const gpStart = idx
   idx += graph.grandparents.length
 
-  const auStart = idx
   idx += graph.auntsUncles.length
 
   const parentStart = idx

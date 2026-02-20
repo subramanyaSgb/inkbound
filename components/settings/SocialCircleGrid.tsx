@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Users, Briefcase, GraduationCap, Plus, Pencil, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { SOCIAL_CATEGORIES } from '@/lib/constants'
-import type { StoryProfile, ProfileRelationship, RelationshipType } from '@/types'
+import type { StoryProfile, ProfileRelationship } from '@/types'
 import type { LucideIcon } from 'lucide-react'
 
 interface SocialCircleGridProps {

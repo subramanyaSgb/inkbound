@@ -67,6 +67,7 @@ export function FamilyTreeSection() {
     setIsModalOpen(true)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function handleAddPerson(_category: string) {
     setPreselectedFromId(null)
     setEditingRelationship(null)
