@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ChapterList } from '@/components/novel/ChapterList'
+import { NovelChapterSection } from '@/components/novel/NovelChapterSection'
 import { Button } from '@/components/ui/Button'
 import type { Chapter, Novel } from '@/types'
 
@@ -120,7 +120,7 @@ export default async function NovelDetailPage({ params }: { params: { novelId: s
           )}
         </div>
       </div>
-      <ChapterList chapters={chapters || []} novelId={novelId} />
+      <NovelChapterSection initialChapters={chapters || []} novelId={novelId} />
     </div>
   )
 }
