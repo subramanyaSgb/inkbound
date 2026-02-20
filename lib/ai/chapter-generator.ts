@@ -11,14 +11,14 @@ export async function generateChapter(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'moonshotai/kimi-k2.5',
+      model: 'stepfun-ai/step-3.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 4096,
+      max_tokens: 16384,
       temperature: 1.0,
-      top_p: 1.0,
+      top_p: 0.9,
       stream: false,
     }),
   })

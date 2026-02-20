@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'moonshotai/kimi-k2.5',
+          model: 'stepfun-ai/step-3.5-flash',
           messages: [
             {
               role: 'system',
