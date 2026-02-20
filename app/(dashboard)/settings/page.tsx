@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { User, LogOut, Users, MapPin, UserCircle } from 'lucide-react'
+import { User, LogOut, Users, MapPin, UserCircle, GitBranch } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { StoryProfileSection } from '@/components/settings/StoryProfileSection'
+import { FamilyTreeSection } from '@/components/settings/FamilyTreeSection'
 import { profileSchema } from '@/lib/validations'
 
 export default function SettingsPage() {
@@ -111,6 +112,20 @@ export default function SettingsPage() {
               <StoryProfileSection type="character" title="Characters" description="People in your life" icon={Users} />
               <StoryProfileSection type="location" title="Locations" description="Places that appear in your stories" icon={MapPin} />
             </div>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card variant="glass">
+            <div className="flex items-center gap-2 mb-4">
+              <GitBranch className="w-5 h-5 text-accent-primary" />
+              <h2 className="text-lg font-display font-semibold text-ink-text">Family Tree & Social Circle</h2>
+            </div>
+            <FamilyTreeSection />
           </Card>
         </motion.div>
       </div>
