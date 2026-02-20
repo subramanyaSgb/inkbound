@@ -101,6 +101,18 @@ export interface StoryProfile {
   updated_at: string
 }
 
+export type RelationshipType = 'parent' | 'sibling' | 'spouse' | 'friend' | 'colleague' | 'mentor'
+
+export interface ProfileRelationship {
+  id: string
+  user_id: string
+  from_profile_id: string
+  to_profile_id: string
+  relationship_type: RelationshipType
+  label: string | null
+  created_at: string
+}
+
 export interface ReadingProgress {
   id: string
   user_id: string
