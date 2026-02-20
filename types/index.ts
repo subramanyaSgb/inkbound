@@ -65,7 +65,7 @@ export interface Chapter {
   updated_at: string
 }
 
-export type Genre = 'literary' | 'comedy' | 'thriller' | 'fantasy' | 'romance' | 'scifi' | 'poetic' | 'noir'
+export type Genre = 'literary' | 'comedy' | 'thriller' | 'fantasy' | 'romance' | 'scifi' | 'poetic' | 'noir' | 'autobiography'
 export type POV = 'first' | 'third' | 'second'
 export type WritingStyle = 'modern' | 'classic' | 'murakami' | 'hemingway' | 'whimsical' | 'stream'
 export type EntryMode = 'freeform' | 'structured'

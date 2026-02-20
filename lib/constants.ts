@@ -7,6 +7,7 @@ export const GENRES = [
   { value: 'scifi', label: 'Sci-Fi', description: 'Futuristic, analytical, exploratory' },
   { value: 'poetic', label: 'Poetic', description: 'Lyrical, metaphor-rich, artistic' },
   { value: 'noir', label: 'Noir', description: 'Dark, moody, detective-style narration' },
+  { value: 'autobiography', label: 'Autobiography', description: 'Truthful, beautifully written memoir' },
 ] as const
 
 export const POVS = [

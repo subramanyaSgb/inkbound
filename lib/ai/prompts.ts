@@ -60,7 +60,39 @@ STRICT RULES ABOUT CHARACTERS AND PLACES:
 - If a place is NOT in the reference, use generic descriptions only`
   }
 
-  const system = `You are a masterful novelist transforming real daily experiences into an evolving novel. You write with the skill of a published author.
+  const isAutobiography = novel.genre === 'autobiography'
+
+  const roleDescription = isAutobiography
+    ? 'You are a gifted memoirist transforming real daily experiences into a beautifully written autobiography. You write with the craft of a published memoir author.'
+    : 'You are a masterful novelist transforming real daily experiences into an evolving novel. You write with the skill of a published author.'
+
+  const instructions = isAutobiography
+    ? `INSTRUCTIONS:
+1. Transform the raw entry into a beautifully written memoir chapter
+2. Stay TRUTHFUL to the events described — do NOT fictionalize, dramatize, or invent scenes
+3. Write in ${novel.pov} person point of view
+4. Use "${novel.character_name}" as the protagonist's name
+5. Enhance the prose quality — make the writing elegant, but keep the events real
+6. Add honest introspection and personal reflection to give depth
+7. Only include dialogue if the user explicitly describes a conversation
+8. Maintain narrative continuity with previous chapters
+9. Chapter length: 500-1500 words based on entry richness
+10. Include a chapter title
+11. Include an opening epigraph/quote (original, thematic)`
+    : `INSTRUCTIONS:
+1. Transform the raw entry into a beautifully written novel chapter
+2. Maintain the ${novel.genre} tone throughout
+3. Write in ${novel.pov} person point of view
+4. Use "${novel.character_name}" as the protagonist's name
+5. Weave in emotional undertones and subtext
+6. Make mundane moments compelling through prose quality
+7. Maintain narrative continuity with previous chapters
+8. Chapter length: 500-1500 words based on entry richness
+9. Include natural dialogue with quotation marks when conversations are mentioned
+10. Include a chapter title
+11. Include an opening epigraph/quote (original, thematic)`
+
+  const system = `${roleDescription}
 
 NOVEL CONTEXT:
 - Title: "${novel.title}"
@@ -75,18 +107,7 @@ NOVEL CONTEXT:
 RECENT CHAPTERS (for continuity):
 ${recentContext}
 ${profileContext}
-INSTRUCTIONS:
-1. Transform the raw entry into a beautifully written novel chapter
-2. Maintain the ${novel.genre} tone throughout
-3. Write in ${novel.pov} person point of view
-4. Use "${novel.character_name}" as the protagonist's name
-5. Weave in emotional undertones and subtext
-6. Make mundane moments compelling through prose quality
-7. Maintain narrative continuity with previous chapters
-8. Chapter length: 500-1500 words based on entry richness
-9. Include natural dialogue with quotation marks when conversations are mentioned
-10. Include a chapter title
-11. Include an opening epigraph/quote (original, thematic)
+${instructions}
 
 RESPOND IN JSON ONLY (no markdown code fences):
 {
