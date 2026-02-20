@@ -45,10 +45,11 @@ export interface Chapter {
   volume_id: string | null
   chapter_number: number
   title: string | null
-  content: string
+  content: string | null
   raw_entry: string
   entry_mode: EntryMode
   entry_date: string
+  status: ChapterStatus
   mood: string | null
   mood_score: number | null
   tags: string[]
@@ -69,6 +70,7 @@ export type Genre = 'literary' | 'comedy' | 'thriller' | 'fantasy' | 'romance' |
 export type POV = 'first' | 'third' | 'second'
 export type WritingStyle = 'modern' | 'classic' | 'murakami' | 'hemingway' | 'whimsical' | 'stream'
 export type EntryMode = 'freeform' | 'structured'
+export type ChapterStatus = 'generating' | 'completed' | 'failed'
 
 export interface ChapterGenerationResponse {
   title: string
