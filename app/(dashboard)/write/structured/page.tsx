@@ -72,23 +72,40 @@ export default function StructuredWritePage() {
     setIsGenerating(true)
     setError('')
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+
     try {
       const response = await fetch('/api/generate-chapter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ novelId, rawEntry, entryDate }),
+        signal: controller.signal,
       })
 
+      clearTimeout(timeout)
+
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Failed to generate chapter')
+        let message = 'Failed to generate chapter'
+        try {
+          const err = await response.json()
+          message = err.error || message
+        } catch {
+          // Response body wasn't JSON
+        }
+        throw new Error(message)
       }
 
       const { chapterId } = await response.json()
       reset()
       router.push(`/novel/${novelId}/chapter/${chapterId}`)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      clearTimeout(timeout)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Generation is taking too long. Please check your novel — your chapter may still be processing.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
+      }
       setIsGenerating(false)
     }
   }

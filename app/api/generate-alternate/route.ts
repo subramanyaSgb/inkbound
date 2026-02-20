@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { buildAlternatePrompt } from '@/lib/ai/alternate-prompts'
 import { checkRateLimit } from '@/lib/rate-limit'
 
+export const maxDuration = 120
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()

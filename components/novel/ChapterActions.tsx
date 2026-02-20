@@ -22,9 +22,15 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
   const [isDeleting, setIsDeleting] = useState(false)
   const [isQuickEditing, setIsQuickEditing] = useState(false)
 
+  const [quickEditError, setQuickEditError] = useState('')
+
   async function handleQuickEdit() {
     if (!quickEditInstruction.trim()) return
     setIsQuickEditing(true)
+    setQuickEditError('')
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
 
     try {
       const response = await fetch('/api/generate-chapter', {
@@ -35,11 +41,20 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
           chapterId,
           editInstruction: quickEditInstruction,
         }),
+        signal: controller.signal,
       })
 
+      clearTimeout(timeout)
+
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Failed to regenerate')
+        let message = 'Failed to regenerate'
+        try {
+          const err = await response.json()
+          message = err.error || message
+        } catch {
+          // Response body wasn't JSON
+        }
+        throw new Error(message)
       }
 
       const { chapterId: resultId } = await response.json()
@@ -47,7 +62,13 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
       setQuickEditInstruction('')
       router.push(`/novel/${novelId}/chapter/${resultId}`)
       router.refresh()
-    } catch {
+    } catch (err: unknown) {
+      clearTimeout(timeout)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setQuickEditError('Taking too long. Please check your novel — it may still be processing.')
+      } else {
+        setQuickEditError(err instanceof Error ? err.message : 'Something went wrong')
+      }
       setIsQuickEditing(false)
     }
   }
@@ -98,6 +119,7 @@ export function ChapterActions({ chapterId, novelId, chapterTitle }: ChapterActi
               onChange={e => setQuickEditInstruction(e.target.value)}
               placeholder="e.g. Change my wife's name to Priya, make the ending more hopeful..."
             />
+            {quickEditError && <p className="text-xs text-status-error mt-2">{quickEditError}</p>}
             <Button
               size="sm"
               className="mt-3"

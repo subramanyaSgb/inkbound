@@ -22,18 +22,35 @@ export function ChapterPageClient({ chapter, novelId, alternates: initialAlterna
   const [isGenerating, setIsGenerating] = useState(false)
   const [alternates] = useState(initialAlternates)
 
+  const [genError, setGenError] = useState('')
+
   async function handleGenreSelect(genre: string) {
     setIsGenerating(true)
+    setGenError('')
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+
     try {
       const response = await fetch('/api/generate-alternate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chapterId: chapter.id, genre }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeout)
+
       if (!response.ok) throw new Error('Failed')
       setShowGenrePicker(false)
       window.location.reload()
-    } catch {
+    } catch (err: unknown) {
+      clearTimeout(timeout)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setGenError('Taking too long. Please check your novel — it may still be processing.')
+      } else {
+        setGenError(err instanceof Error ? err.message : 'Something went wrong')
+      }
       setIsGenerating(false)
     }
   }
@@ -93,6 +110,8 @@ export function ChapterPageClient({ chapter, novelId, alternates: initialAlterna
           Reimagine This Day
         </Button>
       </div>
+
+      {genError && <p className="text-sm text-status-error mt-3">{genError}</p>}
 
       <GenrePickerModal
         isOpen={showGenrePicker}

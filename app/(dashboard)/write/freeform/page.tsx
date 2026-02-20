@@ -64,6 +64,9 @@ export default function FreeformWritePage() {
     setIsGenerating(true)
     setError('')
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+
     try {
       const response = await fetch('/api/generate-chapter', {
         method: 'POST',
@@ -74,18 +77,32 @@ export default function FreeformWritePage() {
           entryDate,
           ...(isEditing && { chapterId }),
         }),
+        signal: controller.signal,
       })
 
+      clearTimeout(timeout)
+
       if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Failed to generate chapter')
+        let message = 'Failed to generate chapter'
+        try {
+          const err = await response.json()
+          message = err.error || message
+        } catch {
+          // Response body wasn't JSON (e.g. 504 timeout page)
+        }
+        throw new Error(message)
       }
 
       const { chapterId: resultChapterId } = await response.json()
       reset()
       router.push(`/novel/${novelId}/chapter/${resultChapterId}`)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      clearTimeout(timeout)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Generation is taking too long. Please check your novel — your chapter may still be processing.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
+      }
       setIsGenerating(false)
     }
   }

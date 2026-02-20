@@ -4,6 +4,8 @@ import { buildChapterPrompt } from '@/lib/ai/prompts'
 import { generateChapter } from '@/lib/ai/chapter-generator'
 import { checkRateLimit } from '@/lib/rate-limit'
 
+export const maxDuration = 120
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
