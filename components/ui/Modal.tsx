@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             exit={{ opacity: 0, y: 40, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 350, damping: 30 }}
             className="fixed z-50 glass-card rounded-t-2xl md:rounded-xl p-6 shadow-glass
-              inset-x-0 bottom-0 md:bottom-auto md:inset-x-4 md:top-[15%] md:mx-auto md:max-w-lg"
+              inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto md:bottom-auto md:inset-x-4 md:top-[15%] md:mx-auto md:max-w-lg md:max-h-[70vh]"
           >
             <div className="flex items-center justify-between mb-4">
               {title ? (
