@@ -20,14 +20,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { novelId, rawEntry, entryDate, chapterId, editInstruction } = await request.json()
+    const { novelId, rawEntry: rawEntryDirect, entryDate, chapterId, editInstruction, entryIds } = await request.json()
 
     // Quick edit mode: editInstruction + chapterId, no rawEntry needed
     const isQuickEdit = !!editInstruction?.trim() && !!chapterId
-
-    if (!novelId || (!isQuickEdit && (!rawEntry?.trim() || !entryDate))) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
 
     // Fetch novel
     const { data: novel, error: novelError } = await supabase
@@ -38,6 +34,31 @@ export async function POST(request: NextRequest) {
 
     if (novelError || !novel) {
       return NextResponse.json({ error: 'Novel not found' }, { status: 404 })
+    }
+
+    // If entryIds provided, fetch and concatenate entries
+    let rawEntry = rawEntryDirect
+    let entriesToArchive: string[] = []
+
+    if (entryIds && Array.isArray(entryIds) && entryIds.length > 0) {
+      const { data: entries } = await supabase
+        .from('daily_entries')
+        .select('id, content, entry_date')
+        .in('id', entryIds)
+        .order('entry_date', { ascending: true })
+
+      if (entries && entries.length > 0) {
+        rawEntry = entries.map(e => {
+          const date = new Date(e.entry_date + 'T00:00:00')
+          const header = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+          return `--- ${header} ---\n${e.content}`
+        }).join('\n\n')
+        entriesToArchive = entries.map(e => e.id)
+      }
+    }
+
+    if (!novelId || (!isQuickEdit && (!rawEntry?.trim() || !entryDate))) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // --- EDIT MODE: update existing chapter to 'generating' ---
@@ -138,6 +159,14 @@ export async function POST(request: NextRequest) {
       .from('novels')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', novelId)
+
+    // Archive entries that were used
+    if (entriesToArchive.length > 0) {
+      await supabase
+        .from('daily_entries')
+        .update({ status: 'archived', chapter_id: chapter.id })
+        .in('id', entriesToArchive)
+    }
 
     return NextResponse.json({ chapterId: chapter.id, status: 'generating' })
   } catch (error: unknown) {
