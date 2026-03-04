@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { BookOpen, PenTool, BarChart3, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BookOpen, PenTool, CalendarDays, BarChart3, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSidebarStore } from '@/stores/sidebar-store'
 
 const navItems = [
   { href: '/', label: 'Library', Icon: BookOpen, matchExact: true },
   { href: '/write', label: 'Write', Icon: PenTool, matchExact: false },
+  { href: '/entries', label: 'Entries', Icon: CalendarDays, matchExact: false },
   { href: '/stats', label: 'Stats', Icon: BarChart3, matchExact: false },
   { href: '/settings', label: 'Settings', Icon: Settings, matchExact: false },
 ]
