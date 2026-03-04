@@ -67,12 +67,13 @@ export async function POST(request: NextRequest) {
     const [recentResult, profilesResult, relationshipsResult] = await Promise.all([
       supabase
         .from('chapters')
-        .select('title, content, mood, chapter_number')
+        .select('title, content, raw_entry, mood, tags, chapter_number, entry_date')
         .eq('novel_id', chapter.novel_id)
         .eq('status', 'completed')
+        .neq('id', chapterId)
         .is('deleted_at', null)
         .order('chapter_number', { ascending: false })
-        .limit(3),
+        .limit(5),
       supabase.from('story_profiles').select('*').eq('user_id', user.id),
       supabase.from('profile_relationships').select('*').eq('user_id', user.id),
     ])

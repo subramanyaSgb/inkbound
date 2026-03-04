@@ -157,16 +157,28 @@ export function buildChapterPrompt(
   chapterNumber: number,
   volumeNumber: number,
   year: number,
-  recentChapters: Pick<Chapter, 'title' | 'content' | 'mood' | 'chapter_number'>[],
+  recentChapters: Pick<Chapter, 'title' | 'content' | 'raw_entry' | 'mood' | 'tags' | 'chapter_number' | 'entry_date'>[],
   storyProfiles: StoryProfile[] = [],
   editInstruction?: string,
   relationships?: ProfileRelationship[]
 ): { system: string; user: string } {
-  const recentContext = recentChapters.length > 0
-    ? recentChapters.map(ch =>
-        `Chapter ${ch.chapter_number} "${ch.title}": mood=${ch.mood}, summary: ${(ch.content || '').slice(0, 200)}...`
-      ).join('\n')
-    : 'No previous chapters yet. This is the beginning of the story.'
+  let recentContext: string
+
+  if (recentChapters.length === 0) {
+    recentContext = 'No previous chapters yet. This is the beginning of the story.'
+  } else {
+    recentContext = recentChapters.map((ch, i) => {
+      // Most recent chapter gets more content, older ones get less
+      const contentLimit = i === 0 ? 800 : 400
+      const contentSnippet = (ch.content || '').slice(0, contentLimit)
+      const tags = ch.tags?.length ? ` | tags: ${ch.tags.join(', ')}` : ''
+      const date = ch.entry_date ? ` (${ch.entry_date})` : ''
+      return `Chapter ${ch.chapter_number} "${ch.title}"${date}:
+  mood: ${ch.mood}${tags}
+  what happened: ${(ch.raw_entry || '').slice(0, 200)}
+  narrative: ${contentSnippet}...`
+    }).join('\n\n')
+  }
 
   // Build profile context — use relationship graph when available, else flat list
   let profileContext = ''
@@ -260,8 +272,16 @@ NOVEL CONTEXT:
 - Current Volume: ${volumeNumber} (${year})
 - Date: ${entryDate}
 
-RECENT CHAPTERS (for continuity):
+STORY SO FAR (maintain continuity — these are the most recent chapters):
 ${recentContext}
+
+CONTINUITY RULES:
+- This is chapter ${chapterNumber} of an ongoing story — NOT a standalone piece
+- Reference events, emotions, or developments from previous chapters naturally
+- Maintain consistent character voice, tone, and narrative style across chapters
+- If a previous chapter ended with unresolved tension or emotion, acknowledge it
+- Build on recurring themes, motifs, or running threads from earlier chapters
+- The reader should feel this is the NEXT page of the same book, not a new story
 ${profileContext}
 ${instructions}
 
