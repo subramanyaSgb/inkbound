@@ -1,77 +1,49 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const contentPool = [
-  // Writing facts
-  'Tolkien took 12 years to write Lord of the Rings.',
-  'Victor Hugo wrote The Hunchback of Notre-Dame in just 6 months.',
-  'Charles Dickens published most of his novels as weekly serials.',
-  'Agatha Christie is the best-selling fiction writer of all time — 2 billion copies sold.',
-  'The longest novel ever written is "In Search of Lost Time" — 1.2 million words.',
-
-  // Funny quotes
-  '"I can write better than anybody who can write faster, and faster than anybody who can write better." — A.J. Liebling',
-  '"Writing is easy. All you have to do is cross out the wrong words." — Mark Twain',
-  '"I love deadlines. I love the whooshing noise they make as they go by." — Douglas Adams',
-  '"The first draft of anything is garbage." — Ernest Hemingway',
-  '"If you want to be a writer, you must do two things: read a lot and write a lot." — Stephen King',
-
-  // Motivational
-  '"Start writing, no matter what. The water does not flow until the faucet is turned on." — Louis L\'Amour',
-  '"There is no greater agony than bearing an untold story inside you." — Maya Angelou',
-  '"You can always edit a bad page. You can\'t edit a blank page." — Jodi Picoult',
-  '"We write to taste life twice, in the moment and in retrospect." — Anais Nin',
-  '"A writer is someone for whom writing is more difficult than it is for other people." — Thomas Mann',
-
-  // Random trivia
-  'Octopuses have three hearts and blue blood.',
-  'Honey never spoils — edible honey was found in 3,000-year-old Egyptian tombs.',
-  'A group of flamingos is called a "flamboyance."',
-  'The shortest war in history lasted 38 minutes (Britain vs Zanzibar, 1896).',
-  'Bananas are technically berries, but strawberries aren\'t.',
-
-  // Book facts
-  'The first novel ever written is "The Tale of Genji" from 1010 AD.',
-  'The Bible is the most shoplifted book in the world.',
-  'Dr. Seuss wrote "Green Eggs and Ham" using only 50 different words.',
-  'Shakespeare invented over 1,700 words we still use today.',
-  'J.K. Rowling was rejected by 12 publishers before Harry Potter was accepted.',
-
-  // More writing facts
-  'Leo Tolstoy\'s wife hand-copied War and Peace seven times.',
-  'The word "nerd" was first used by Dr. Seuss in "If I Ran the Zoo" (1950).',
-  'Franz Kafka asked his friend to burn all his unpublished works. His friend didn\'t.',
-  'Maya Angelou rented a hotel room to write in — she never slept there.',
-  'Stephen King writes 2,000 words every single day, including holidays.',
+const FALLBACK = [
+  'Crafting your story...',
+  'Weaving words together...',
+  'Turning your day into art...',
 ]
 
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+async function fetchRandomFact(): Promise<string> {
+  try {
+    const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en', {
+      cache: 'no-store',
+    })
+    if (!res.ok) throw new Error()
+    const data = await res.json()
+    return data.text
+  } catch {
+    return FALLBACK[Math.floor(Math.random() * FALLBACK.length)]
   }
-  return shuffled
 }
 
 export function GeneratingAnimation() {
-  const [items, setItems] = useState(contentPool)
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentItem, setCurrentItem] = useState('')
   const [displayedText, setDisplayedText] = useState('')
   const [visible, setVisible] = useState(true)
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(true)
 
-  // Shuffle on client only to avoid hydration mismatch from Math.random()
-  useEffect(() => {
-    setItems(shuffleArray(contentPool))
+  const loadNext = useCallback(async () => {
+    const fact = await fetchRandomFact()
+    if (mountedRef.current) setCurrentItem(fact)
   }, [])
 
-  const currentItem = items[currentIndex % items.length]
-
-  // Typewriter effect: type out the current item character by character
+  // Fetch first fact on mount
   useEffect(() => {
+    mountedRef.current = true
+    loadNext()
+    return () => { mountedRef.current = false }
+  }, [loadNext])
+
+  // Typewriter effect
+  useEffect(() => {
+    if (!currentItem) return
     setDisplayedText('')
     setVisible(true)
     let charIndex = 0
@@ -91,17 +63,17 @@ export function GeneratingAnimation() {
     }
   }, [currentItem])
 
-  // Cycle to next item every 10 seconds
+  // Cycle every 10 seconds — fetch a new fact each time
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false)
       setTimeout(() => {
-        setCurrentIndex(prev => prev + 1)
+        loadNext()
       }, 600)
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [loadNext])
 
   return (
     <motion.div
@@ -165,7 +137,7 @@ export function GeneratingAnimation() {
       <div className="h-28 flex items-center justify-center max-w-md w-full glass-card rounded-2xl px-6">
         <AnimatePresence mode="wait">
           <motion.p
-            key={currentIndex}
+            key={currentItem}
             initial={{ opacity: 0 }}
             animate={{ opacity: visible ? 1 : 0 }}
             exit={{ opacity: 0 }}
