@@ -5,7 +5,11 @@ import { useWriteStore } from '@/stores/write-store'
 import { createClient } from '@/lib/supabase/client'
 import type { StoryProfile } from '@/types'
 
-export function FreeformEditor() {
+interface FreeformEditorProps {
+  onContentChange?: (text: string) => void
+}
+
+export function FreeformEditor({ onContentChange }: FreeformEditorProps) {
   const { rawEntry, setRawEntry } = useWriteStore()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [profiles, setProfiles] = useState<StoryProfile[]>([])
@@ -46,6 +50,7 @@ export function FreeformEditor() {
     const value = e.target.value
     const cursorPos = e.target.selectionStart
     setRawEntry(value)
+    onContentChange?.(value)
 
     // Check if we're in an @mention
     const textBeforeCursor = value.slice(0, cursorPos)
@@ -72,7 +77,9 @@ export function FreeformEditor() {
     const cursorPos = textareaRef.current?.selectionStart || mentionStart
     const after = rawEntry.slice(cursorPos)
     const mention = `@${profile.nickname || profile.name} `
-    setRawEntry(before + mention + after)
+    const newValue = before + mention + after
+    setRawEntry(newValue)
+    onContentChange?.(newValue)
     setShowDropdown(false)
 
     setTimeout(() => {
