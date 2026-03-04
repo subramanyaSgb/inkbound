@@ -3,8 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import { useWriteStore } from '@/stores/write-store'
+import { useEntryStore } from '@/stores/entry-store'
+import { useAutoSave } from '@/hooks/useAutoSave'
+import { SaveStatus } from '@/components/write/SaveStatus'
+import { Toast } from '@/components/ui/Toast'
 import { GeneratingAnimation } from '@/components/write/GeneratingAnimation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -35,6 +39,10 @@ export default function StructuredWritePage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set(['morning', 'events', 'feelings']))
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const { setCurrentEntry, clear: clearEntry } = useEntryStore()
+  const { saveNow } = useAutoSave(novelId, 'structured')
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
     if (novelId) setSelectedNovelId(novelId)
@@ -43,6 +51,23 @@ export default function StructuredWritePage() {
   useEffect(() => {
     initDate()
   }, [initDate])
+
+  // Sync structured answers to entry store for auto-save
+  useEffect(() => {
+    if (!novelId || !entryDate) return
+    const content = buildRawEntry()
+    if (content.trim()) {
+      setCurrentEntry({
+        novelId,
+        entryDate,
+        content,
+        entryMode: 'structured',
+        lastSavedAt: null,
+        isDirty: true,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, novelId, entryDate])
 
   function setAnswer(id: string, value: string) {
     setAnswers(prev => ({ ...prev, [id]: value }))
@@ -62,6 +87,12 @@ export default function StructuredWritePage() {
       .filter(p => answers[p.id]?.trim())
       .map(p => answers[p.id].trim())
       .join('\n\n')
+  }
+
+  async function handleSave() {
+    await saveNow()
+    setToastMessage('Entry saved')
+    setShowToast(true)
   }
 
   const filledCount = PROMPTS.filter(p => answers[p.id]?.trim()).length
@@ -161,16 +192,19 @@ export default function StructuredWritePage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
+        <button onClick={() => { clearEntry(); reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <Input
-          type="date"
-          value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value)}
-          className="w-auto text-sm"
-        />
+        <div className="flex items-center gap-3">
+          <SaveStatus />
+          <Input
+            type="date"
+            value={entryDate}
+            onChange={(e) => setEntryDate(e.target.value)}
+            className="w-auto text-sm"
+          />
+        </div>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -234,8 +268,12 @@ export default function StructuredWritePage() {
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-4 md:mt-6 gap-2 md:gap-3">
         <p className="text-xs text-text-muted font-ui">{filledCount} of {PROMPTS.length} answered</p>
         <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
-          <Button variant="secondary" onClick={() => { reset(); router.back() }} className="flex-1 sm:flex-none">
+          <Button variant="secondary" onClick={() => { clearEntry(); reset(); router.back() }} className="flex-1 sm:flex-none">
             Discard
+          </Button>
+          <Button variant="outline" onClick={handleSave} disabled={filledCount === 0} className="flex-1 sm:flex-none">
+            <Save className="w-4 h-4 mr-1.5" />
+            Save Entry
           </Button>
           <Button onClick={handleGenerate} isLoading={isGenerating} disabled={filledCount === 0} variant="glow" className="flex-1 sm:flex-none">
             {isGenerating ? 'Generating Chapter...' : 'Generate Chapter'}
@@ -252,6 +290,14 @@ export default function StructuredWritePage() {
           onClose={() => setShowProfileModal(false)}
         />
       )}
+
+      <Toast
+        message={toastMessage}
+        type="info"
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        duration={3000}
+      />
     </div>
   )
 }
