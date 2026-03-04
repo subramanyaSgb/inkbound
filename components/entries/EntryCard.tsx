@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+
 import { Calendar, BookOpen, Trash2, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
