@@ -34,9 +34,9 @@ export function Sidebar() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[80px] bg-accent-primary/[0.03] rounded-full blur-[40px] pointer-events-none" />
 
       {/* Logo */}
-      <div className="px-4 mb-8 overflow-hidden relative">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-display text-2xl text-accent-primary flex-shrink-0">I</span>
+      <div className={`mb-8 overflow-hidden relative transition-all duration-300 ${collapsed ? 'px-0 flex flex-col items-center' : 'px-4'}`}>
+        <Link href="/" className="inline-flex items-center">
+          <span className="font-display text-2xl text-accent-primary">I</span>
           <motion.span
             animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto' }}
             transition={{ duration: 0.2 }}
@@ -66,7 +66,8 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={`
-                relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-ui transition-all duration-300
+                relative flex items-center rounded-xl py-2.5 text-sm font-ui transition-all duration-300
+                ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}
                 ${isActive
                   ? 'text-accent-primary bg-accent-primary/[0.08] border border-accent-primary/15 shadow-glow-sm'
                   : 'text-text-muted hover:text-text-primary hover:bg-ink-card/40 border border-transparent'
@@ -77,7 +78,7 @@ export function Sidebar() {
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-accent-primary rounded-r-full shadow-glow-sm"
+                  className="absolute -left-2 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-accent-primary rounded-r-full shadow-glow-sm"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
