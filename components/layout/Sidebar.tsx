@@ -58,39 +58,40 @@ export function Sidebar() {
       <div className="mx-4 mb-3 h-px bg-gradient-to-r from-transparent via-accent-primary/15 to-transparent" />
 
       {/* Nav items */}
-      <nav className="space-y-1 px-2 flex-1">
+      <nav className="space-y-1 px-2 flex-1 relative">
         {navItems.map((item) => {
           const isActive = isItemActive(pathname, item)
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
-                relative flex items-center rounded-xl py-2.5 text-sm font-ui transition-all duration-300
-                ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}
-                ${isActive
-                  ? 'text-accent-primary bg-accent-primary/[0.08] border border-accent-primary/15 shadow-glow-sm'
-                  : 'text-text-muted hover:text-text-primary hover:bg-ink-card/40 border border-transparent'
-                }
-              `}
-              title={collapsed ? item.label : undefined}
-            >
+            <div key={item.href} className="relative">
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className="absolute -left-2 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-accent-primary rounded-r-full shadow-glow-sm"
+                  className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-[3px] h-6 bg-accent-primary rounded-r-full shadow-glow-sm z-10"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
-              <item.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-300 ${isActive ? 'text-accent-primary' : ''}`} />
-              <motion.span
-                animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto' }}
-                transition={{ duration: 0.15 }}
-                className="whitespace-nowrap overflow-hidden"
+              <Link
+                href={item.href}
+                className={`
+                  relative flex items-center rounded-xl py-2.5 text-sm font-ui transition-all duration-300
+                  ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}
+                  ${isActive
+                    ? 'text-accent-primary bg-accent-primary/[0.08] border border-accent-primary/15 shadow-glow-sm'
+                    : 'text-text-muted hover:text-text-primary hover:bg-ink-card/40 border border-transparent'
+                  }
+                `}
+                title={collapsed ? item.label : undefined}
               >
-                {item.label}
-              </motion.span>
-            </Link>
+                <item.Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-300 ${isActive ? 'text-accent-primary' : ''}`} />
+                <motion.span
+                  animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto' }}
+                  transition={{ duration: 0.15 }}
+                  className="whitespace-nowrap overflow-hidden"
+                >
+                  {item.label}
+                </motion.span>
+              </Link>
+            </div>
           )
         })}
       </nav>
