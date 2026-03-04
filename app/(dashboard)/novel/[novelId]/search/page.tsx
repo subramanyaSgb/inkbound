@@ -74,11 +74,11 @@ export default function ChapterSearchPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Link href={`/novel/${novelId}`} className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-flex items-center gap-1.5 transition-colors">
+      <Link href={`/novel/${novelId}`} className="text-sm text-text-muted hover:text-accent-primary/70 mb-4 inline-flex items-center gap-1.5 transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to Novel
       </Link>
-      <h1 className="font-display text-xl md:text-2xl text-text-primary mb-4">Search Chapters</h1>
+      <h1 className="font-display text-xl md:text-2xl text-gradient mb-4">Search Chapters</h1>
 
       <div className="space-y-3 mb-6">
         <div className="relative">

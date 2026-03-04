@@ -40,3 +40,8 @@ nul
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Plugin cache
+.agent/
+.agents/
+skills/

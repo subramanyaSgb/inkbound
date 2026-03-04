@@ -209,7 +209,7 @@ export default function ConversationWritePage() {
     <div className="max-w-3xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-text-secondary flex items-center gap-1.5 transition-colors">
+        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>

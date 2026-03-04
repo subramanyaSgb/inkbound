@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { User, LogOut, Users, MapPin, UserCircle, GitBranch } from 'lucide-react'
+import { User, LogOut, Users, MapPin, UserCircle, GitBranch, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -69,8 +69,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-xl md:text-3xl text-text-primary mb-4 md:mb-8">Settings</h1>
+    <div className="relative max-w-2xl mx-auto">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[350px] h-[180px] bg-accent-primary/[0.04] rounded-full blur-[80px] pointer-events-none" />
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <p className="font-body text-sm text-accent-primary/70 italic">Make it yours</p>
+        <h1 className="font-display text-2xl md:text-3xl text-gradient mb-4 md:mb-8">Settings</h1>
+      </motion.div>
+
+      <div className="flex items-center gap-3 mt-1 mb-6">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-accent-primary/20 to-transparent" />
+        <Sparkles className="w-3 h-3 text-accent-primary/30" />
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-accent-primary/20 to-transparent" />
+      </div>
 
       <div className="space-y-4 md:space-y-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>

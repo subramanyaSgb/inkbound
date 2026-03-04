@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ChapterPageClient } from '@/components/novel/ChapterPageClient'
 import { Button } from '@/components/ui/Button'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Chapter, AlternateChapter } from '@/types'
 
 export default async function ChapterPage({
@@ -98,9 +99,9 @@ export default async function ChapterPage({
     <div className="max-w-3xl mx-auto pb-8 md:pb-12">
       <Link
         href={`/novel/${novelId}`}
-        className="text-xs md:text-sm text-text-muted hover:text-text-secondary mb-4 md:mb-8 inline-flex items-center gap-1 transition-colors"
+        className="text-xs md:text-sm text-text-muted hover:text-accent-primary/70 mb-4 md:mb-8 inline-flex items-center gap-1 transition-colors"
       >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        <ChevronLeft className="w-3.5 h-3.5" />
         All Chapters
       </Link>
 
@@ -110,7 +111,7 @@ export default async function ChapterPage({
         {prevChapter ? (
           <Link href={`/novel/${novelId}/chapter/${prevChapter.id}`}>
             <Button variant="ghost" className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              <ChevronLeft className="w-4 h-4" />
               Previous
             </Button>
           </Link>
@@ -119,7 +120,7 @@ export default async function ChapterPage({
           <Link href={`/novel/${novelId}/chapter/${nextChapter.id}`}>
             <Button variant="ghost" className="flex items-center gap-1.5">
               Next
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              <ChevronRight className="w-4 h-4" />
             </Button>
           </Link>
         ) : <div />}

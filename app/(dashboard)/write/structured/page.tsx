@@ -161,7 +161,7 @@ export default function StructuredWritePage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-text-secondary flex items-center gap-1.5 transition-colors">
+        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>

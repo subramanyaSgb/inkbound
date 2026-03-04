@@ -88,6 +88,21 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+  /* Stagger entrance animations (CSS-only, works in server components) */
+  .animate-enter {
+    animation: fadeSlideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+  .animate-enter-1 { animation-delay: 0.05s; }
+  .animate-enter-2 { animation-delay: 0.1s; }
+  .animate-enter-3 { animation-delay: 0.15s; }
+  .animate-enter-4 { animation-delay: 0.2s; }
+  .animate-enter-5 { animation-delay: 0.25s; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     * {

@@ -85,14 +85,18 @@ export default function NewNovelPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <motion.h1
+    <div className="max-w-2xl mx-auto relative">
+      {/* Ambient glow */}
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[350px] h-[180px] bg-accent-primary/[0.04] rounded-full blur-[80px] pointer-events-none" />
+
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="font-display text-xl md:text-3xl text-text-primary mb-4 md:mb-8"
+        className="relative mb-6 md:mb-8"
       >
-        Create a New Novel
-      </motion.h1>
+        <p className="font-body text-sm text-accent-primary/70 italic mb-1 tracking-wide">A new chapter begins</p>
+        <h1 className="font-display text-2xl md:text-3xl text-gradient leading-tight">Create a New Novel</h1>
+      </motion.div>
 
       <form onSubmit={handleCreate} className="space-y-4 md:space-y-6">
         <motion.div custom={0} initial="hidden" animate="show" variants={stagger}>

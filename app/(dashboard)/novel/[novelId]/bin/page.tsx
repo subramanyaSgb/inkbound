@@ -74,13 +74,13 @@ export default function RecycleBinPage() {
     <div className="max-w-3xl mx-auto">
       <Link
         href={`/novel/${novelId}`}
-        className="text-sm text-text-muted hover:text-text-secondary mb-4 inline-flex items-center gap-1.5 transition-colors"
+        className="text-sm text-text-muted hover:text-accent-primary/70 mb-4 inline-flex items-center gap-1.5 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Novel
       </Link>
 
-      <h1 className="font-display text-xl md:text-2xl text-text-primary mb-1">Recycle Bin</h1>
+      <h1 className="font-display text-xl md:text-2xl text-gradient mb-1">Recycle Bin</h1>
       <p className="text-xs text-text-muted mb-4 md:mb-6">
         Deleted chapters are kept for 30 days before being permanently removed.
       </p>
