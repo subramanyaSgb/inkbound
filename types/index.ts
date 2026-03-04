@@ -69,8 +69,26 @@ export interface Chapter {
 export type Genre = 'literary' | 'comedy' | 'thriller' | 'fantasy' | 'romance' | 'scifi' | 'poetic' | 'noir' | 'autobiography'
 export type POV = 'first' | 'third' | 'second'
 export type WritingStyle = 'modern' | 'classic' | 'murakami' | 'hemingway' | 'whimsical' | 'stream'
-export type EntryMode = 'freeform' | 'structured'
+export type EntryMode = 'freeform' | 'structured' | 'conversation'
 export type ChapterStatus = 'generating' | 'completed' | 'failed'
+
+export type EntryStatus = 'draft' | 'archived'
+
+export interface DailyEntry {
+  id: string
+  novel_id: string
+  user_id: string
+  title: string | null
+  content: string
+  entry_date: string
+  entry_mode: EntryMode
+  status: EntryStatus
+  word_count: number
+  chapter_id: string | null
+  last_auto_saved_at: string | null
+  created_at: string
+  updated_at: string
+}
 
 export interface ChapterGenerationResponse {
   title: string
