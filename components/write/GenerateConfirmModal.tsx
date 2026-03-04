@@ -20,7 +20,6 @@ interface GenerateConfirmModalProps {
 export function GenerateConfirmModal({
   entryIds,
   currentEntry,
-  novelId,
   onConfirm,
   onClose,
 }: GenerateConfirmModalProps) {

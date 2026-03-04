@@ -36,7 +36,6 @@ export default function FreeformWritePage() {
   const { saveNow } = useAutoSave(novelId, 'freeform')
 
   const [error, setError] = useState('')
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -393,8 +392,6 @@ export default function FreeformWritePage() {
       </motion.div>
 
       {error && <p className="text-sm text-status-error mt-4">{error}</p>}
-      {validationErrors.rawEntry && <p className="text-xs text-status-error mt-2">{validationErrors.rawEntry}</p>}
-      {validationErrors.entryDate && <p className="text-xs text-status-error mt-1">{validationErrors.entryDate}</p>}
 
       {/* Action buttons */}
       <div className="flex flex-col-reverse sm:flex-row justify-end mt-4 md:mt-6 gap-2 md:gap-3">
