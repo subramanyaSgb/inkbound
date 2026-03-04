@@ -3,8 +3,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, SkipForward } from 'lucide-react'
+import { ArrowLeft, Send, SkipForward, Save } from 'lucide-react'
 import { useWriteStore } from '@/stores/write-store'
+import { useEntryStore } from '@/stores/entry-store'
+import { useAutoSave } from '@/hooks/useAutoSave'
+import { SaveStatus } from '@/components/write/SaveStatus'
+import { Toast } from '@/components/ui/Toast'
 import { GeneratingAnimation } from '@/components/write/GeneratingAnimation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -39,6 +43,10 @@ export default function ConversationWritePage() {
   const [isComplete, setIsComplete] = useState(false)
   const [unknowns, setUnknowns] = useState<UnknownReference[]>([])
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const { setCurrentEntry, clear: clearEntry } = useEntryStore()
+  const { saveNow } = useAutoSave(novelId, 'conversation')
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -66,6 +74,23 @@ export default function ConversationWritePage() {
   useEffect(() => {
     inputRef.current?.focus()
   }, [currentQuestion])
+
+  // Sync conversation answers to entry store for auto-save
+  useEffect(() => {
+    if (!novelId || !entryDate) return
+    const content = buildRawEntry()
+    if (content.trim()) {
+      setCurrentEntry({
+        novelId,
+        entryDate,
+        content,
+        entryMode: 'conversation',
+        lastSavedAt: null,
+        isDirty: true,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, novelId, entryDate])
 
   function buildRawEntry(): string {
     return messages
@@ -109,6 +134,12 @@ export default function ConversationWritePage() {
       e.preventDefault()
       handleSend()
     }
+  }
+
+  async function handleSave() {
+    await saveNow()
+    setToastMessage('Entry saved')
+    setShowToast(true)
   }
 
   async function doGenerate() {
@@ -209,16 +240,19 @@ export default function ConversationWritePage() {
     <div className="max-w-3xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <button onClick={() => { reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
+        <button onClick={() => { clearEntry(); reset(); router.back() }} className="text-sm text-text-muted hover:text-accent-primary/70 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <Input
-          type="date"
-          value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value)}
-          className="w-auto text-sm"
-        />
+        <div className="flex items-center gap-3">
+          <SaveStatus />
+          <Input
+            type="date"
+            value={entryDate}
+            onChange={(e) => setEntryDate(e.target.value)}
+            className="w-auto text-sm"
+          />
+        </div>
       </div>
 
       {/* Messages */}
@@ -284,8 +318,12 @@ export default function ConversationWritePage() {
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => { reset(); router.back() }} className="flex-1">
+            <Button variant="secondary" onClick={() => { clearEntry(); reset(); router.back() }} className="flex-1">
               Discard
+            </Button>
+            <Button variant="outline" onClick={handleSave}>
+              <Save className="w-4 h-4 mr-1.5" />
+              Save as Entry
             </Button>
             <Button variant="glow" onClick={handleGenerate} isLoading={isGenerating} disabled={!hasAnswers} className="flex-1">
               {isGenerating ? 'Generating Chapter...' : 'Generate Chapter'}
@@ -315,6 +353,14 @@ export default function ConversationWritePage() {
           onClose={() => setShowProfileModal(false)}
         />
       )}
+
+      <Toast
+        message={toastMessage}
+        type="info"
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        duration={3000}
+      />
     </div>
   )
 }
