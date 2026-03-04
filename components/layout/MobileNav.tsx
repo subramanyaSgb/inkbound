@@ -6,11 +6,18 @@ import { motion } from 'framer-motion'
 import { BookOpen, PenTool, BarChart3, Settings } from 'lucide-react'
 
 const navItems = [
-  { href: '/', label: 'Library', Icon: BookOpen },
-  { href: '/write', label: 'Write', Icon: PenTool },
-  { href: '/stats', label: 'Stats', Icon: BarChart3 },
-  { href: '/settings', label: 'Settings', Icon: Settings },
+  { href: '/', label: 'Library', Icon: BookOpen, matchExact: true },
+  { href: '/write', label: 'Write', Icon: PenTool, matchExact: false },
+  { href: '/stats', label: 'Stats', Icon: BarChart3, matchExact: false },
+  { href: '/settings', label: 'Settings', Icon: Settings, matchExact: false },
 ]
+
+function isItemActive(pathname: string, item: typeof navItems[number]): boolean {
+  if (item.matchExact) {
+    return pathname === '/' || pathname.startsWith('/novel')
+  }
+  return pathname.startsWith(item.href)
+}
 
 export function MobileNav() {
   const pathname = usePathname()
@@ -18,7 +25,7 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around border-t border-ink-border/50 bg-ink-bg/80 backdrop-blur-md py-1 pb-[env(safe-area-inset-bottom,4px)] lg:hidden">
       {navItems.map((item) => {
-        const isActive = pathname === item.href
+        const isActive = isItemActive(pathname, item)
         return (
           <Link
             key={item.href}
