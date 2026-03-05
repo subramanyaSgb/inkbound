@@ -39,6 +39,17 @@ export function FreeformEditor({ onContentChange }: FreeformEditorProps) {
     if (textarea) {
       textarea.style.height = 'auto'
       textarea.style.height = `${Math.max(textarea.scrollHeight, 250)}px`
+
+      // Keep cursor visible — scroll the bottom of the textarea into view
+      // so the user can always see what they're typing
+      requestAnimationFrame(() => {
+        const rect = textarea.getBoundingClientRect()
+        const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+        // If the bottom of the textarea is below the visible area, scroll it up
+        if (rect.bottom > viewportHeight - 60) {
+          window.scrollBy({ top: rect.bottom - viewportHeight + 80, behavior: 'smooth' })
+        }
+      })
     }
   }, [rawEntry])
 

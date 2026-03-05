@@ -12,6 +12,13 @@ interface EntryCalendarProps {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function EntryCalendar({ entries }: EntryCalendarProps) {
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -40,7 +47,7 @@ export function EntryCalendar({ entries }: EntryCalendarProps) {
     for (let i = startOffset - 1; i >= 0; i--) {
       const d = new Date(year, month, -i)
       days.push({
-        date: d.toISOString().split('T')[0],
+        date: toLocalDateStr(d),
         day: d.getDate(),
         isCurrentMonth: false,
       })
@@ -49,7 +56,7 @@ export function EntryCalendar({ entries }: EntryCalendarProps) {
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const date = new Date(year, month, d)
       days.push({
-        date: date.toISOString().split('T')[0],
+        date: toLocalDateStr(date),
         day: d,
         isCurrentMonth: true,
       })
@@ -60,7 +67,7 @@ export function EntryCalendar({ entries }: EntryCalendarProps) {
       for (let d = 1; d <= remaining; d++) {
         const date = new Date(year, month + 1, d)
         days.push({
-          date: date.toISOString().split('T')[0],
+          date: toLocalDateStr(date),
           day: d,
           isCurrentMonth: false,
         })
@@ -91,7 +98,7 @@ export function EntryCalendar({ entries }: EntryCalendarProps) {
   }
 
   const monthName = new Date(currentMonth.year, currentMonth.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateStr(new Date())
 
   return (
     <div>

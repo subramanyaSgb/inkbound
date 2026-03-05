@@ -168,7 +168,8 @@ export async function getWritingStreak(
   if (!data || data.length === 0) return { current: 0, longest: 0 }
 
   const dates = data.map(d => d.entry_date).sort().reverse()
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   let current = 0
   let longest = 0

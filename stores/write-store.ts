@@ -1,5 +1,10 @@
 import { create } from 'zustand'
 
+function todayLocal(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 interface WriteStore {
   selectedNovelId: string | null
   rawEntry: string
@@ -26,6 +31,6 @@ export const useWriteStore = create<WriteStore>((set) => ({
   setEntryDate: (date) => set({ entryDate: date }),
   setIsGenerating: (val) => set({ isGenerating: val }),
   setEditingChapterId: (id) => set({ editingChapterId: id }),
-  reset: () => set({ rawEntry: '', entryDate: new Date().toISOString().split('T')[0], isGenerating: false, editingChapterId: null }),
-  initDate: () => set((state) => ({ entryDate: state.entryDate || new Date().toISOString().split('T')[0] })),
+  reset: () => set({ rawEntry: '', entryDate: todayLocal(), isGenerating: false, editingChapterId: null }),
+  initDate: () => set((state) => ({ entryDate: state.entryDate || todayLocal() })),
 }))
