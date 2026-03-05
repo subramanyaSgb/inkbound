@@ -34,24 +34,21 @@ export function FreeformEditor({ onContentChange }: FreeformEditorProps) {
     })
   }, [])
 
+  // Set max-height so the textarea scrolls internally instead of growing forever.
+  // The browser natively keeps the cursor visible inside a scrollable textarea.
   useEffect(() => {
-    const textarea = textareaRef.current
-    if (textarea) {
-      textarea.style.height = 'auto'
-      textarea.style.height = `${Math.max(textarea.scrollHeight, 250)}px`
-
-      // Keep cursor visible — scroll the bottom of the textarea into view
-      // so the user can always see what they're typing
-      requestAnimationFrame(() => {
-        const rect = textarea.getBoundingClientRect()
-        const viewportHeight = window.visualViewport?.height ?? window.innerHeight
-        // If the bottom of the textarea is below the visible area, scroll it up
-        if (rect.bottom > viewportHeight - 60) {
-          window.scrollBy({ top: rect.bottom - viewportHeight + 80, behavior: 'smooth' })
-        }
-      })
+    function updateMaxHeight() {
+      const textarea = textareaRef.current
+      if (!textarea) return
+      const vh = window.visualViewport?.height ?? window.innerHeight
+      // Leave room for header + buttons (~200px)
+      textarea.style.maxHeight = `${Math.max(vh - 200, 250)}px`
     }
-  }, [rawEntry])
+
+    updateMaxHeight()
+    window.visualViewport?.addEventListener('resize', updateMaxHeight)
+    return () => window.visualViewport?.removeEventListener('resize', updateMaxHeight)
+  }, [])
 
   useEffect(() => {
     textareaRef.current?.focus()
@@ -118,7 +115,7 @@ export function FreeformEditor({ onContentChange }: FreeformEditorProps) {
           }
         }}
         placeholder="Tell me about your day... Use @ to mention people and places."
-        className="w-full min-h-[250px] md:min-h-[300px] bg-transparent font-body text-base md:text-lg text-text-primary leading-relaxed placeholder:text-text-muted/40 resize-none focus:outline-none"
+        className="w-full min-h-[250px] md:min-h-[300px] bg-transparent font-body text-base md:text-lg text-text-primary leading-relaxed placeholder:text-text-muted/40 resize-none overflow-y-auto focus:outline-none"
       />
 
       <div className="mt-1">
